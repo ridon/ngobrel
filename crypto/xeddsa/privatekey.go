@@ -37,7 +37,7 @@ func (t *PrivateKey) Sign(random io.Reader, message []byte) *[keysize * 2]byte {
 
   initData := make([]byte, keysize)
   for i := range initData {
-    initData[i] = 0
+    initData[i] = 0xff
   }
 
   var hash[keysize * 2]byte
