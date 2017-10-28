@@ -7,7 +7,7 @@ import (
 )
 
 type PublicKey struct {
-  key [keysize]byte
+  key [Keysize]byte
 }
 
 
@@ -15,7 +15,7 @@ func (t *PublicKey) HexString() string{
   return hex.EncodeToString(t.key[:])
 }
 
-func NewPublicKey(key [keysize]byte) *PublicKey {
+func NewPublicKey(key [Keysize]byte) *PublicKey {
   ret := PublicKey {
     key: key,
   }
@@ -23,7 +23,7 @@ func NewPublicKey(key [keysize]byte) *PublicKey {
 }
 
 func (t *PublicKey) Verify(message []byte, signature *[64]byte) bool {
-  var key [keysize]byte;
+  var key [Keysize]byte;
   copy(key[:], t.key[:])
   key[31] &= 0x7F
 
