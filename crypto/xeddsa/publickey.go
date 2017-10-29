@@ -7,24 +7,24 @@ import (
 )
 
 type PublicKey struct {
-  key [keysize]byte
+  Contents [Keysize]byte
 }
 
 
 func (t *PublicKey) HexString() string{
-  return hex.EncodeToString(t.key[:])
+  return hex.EncodeToString(t.Contents [:])
 }
 
-func NewPublicKey(key [keysize]byte) *PublicKey {
+func NewPublicKey(key [Keysize]byte) *PublicKey {
   ret := PublicKey {
-    key: key,
+    Contents: key,
   }
   return &ret
 }
 
 func (t *PublicKey) Verify(message []byte, signature *[64]byte) bool {
-  var key [keysize]byte;
-  copy(key[:], t.key[:])
+  var key [Keysize]byte;
+  copy(key[:], t.Contents[:])
   key[31] &= 0x7F
 
 	var edY, one, montX, montXMinusOne, montXPlusOne edwards25519.FieldElement
