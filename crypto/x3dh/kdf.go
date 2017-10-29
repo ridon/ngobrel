@@ -7,7 +7,7 @@ import (
   "io"
 )
 
-func KDF(hashFn func() hash.Hash, secret []byte, info string) []byte {
+func KDF(hashFn func() hash.Hash, secret []byte, info string, length int) ([]byte, error) {
   initData := make([]byte, xeddsa.Keysize)
   for i := range initData {
     initData[i] = 0xff
@@ -20,11 +20,14 @@ func KDF(hashFn func() hash.Hash, secret []byte, info string) []byte {
   infoByte := []byte(info)
 
   fn := hkdf.New(hashFn, data, salt, infoByte)
-  kdf := make([]byte, 32)
-  n, _ := io.ReadFull(fn, kdf)
-  if (n != 32) {
-    return nil
+  kdf := make([]byte, length)
+  n, err := io.ReadFull(fn, kdf)
+  if err != nil {
+    return nil, err
   }
-  return kdf
+  if n != 32 {
+    return nil, err
+  }
+  return kdf, err
 }
 

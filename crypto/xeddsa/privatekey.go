@@ -8,16 +8,16 @@ import (
 )
 
 type PrivateKey struct {
-  key [Keysize]byte
+  Contents [Keysize]byte
 }
 
 func (t *PrivateKey) HexString() string{
-  return hex.EncodeToString(t.key[:])
+  return hex.EncodeToString(t.Contents[:])
 }
 
 func NewPrivateKey(key [Keysize]byte) *PrivateKey {
   ret := PrivateKey {
-    key: key,
+    Contents : key,
   }
   return &ret
 }
@@ -25,7 +25,7 @@ func NewPrivateKey(key [Keysize]byte) *PrivateKey {
 func (t *PrivateKey) GetEd25519PublicKey() [Keysize]byte {
   var A edwards25519.ExtendedGroupElement
 	var publicKey [Keysize]byte
-	edwards25519.GeScalarMultBase(&A, &t.key)
+	edwards25519.GeScalarMultBase(&A, &t.Contents)
 	A.ToBytes(&publicKey)
 
   return publicKey;
@@ -43,7 +43,7 @@ func (t *PrivateKey) Sign(random io.Reader, message []byte) *[Keysize * 2]byte {
   var hash[Keysize * 2]byte
 	digest := sha512.New()
 	digest.Write(initData[:])
-	digest.Write(t.key[:])
+	digest.Write(t.Contents[:])
 	digest.Write(message)
 	digest.Write(randomByte[:])
 	digest.Sum(hash[:0])
@@ -68,7 +68,7 @@ func (t *PrivateKey) Sign(random io.Reader, message []byte) *[Keysize * 2]byte {
 	edwards25519.ScReduce(&hramDigestReduced, &hramDigest)
 
   var s [Keysize]byte
-	edwards25519.ScMulAdd(&s, &hramDigestReduced, &t.key, &hashReduced)
+	edwards25519.ScMulAdd(&s, &hramDigestReduced, &t.Contents, &hashReduced)
 
 	ret := new([Keysize * 2]byte)
 	copy(ret[:], encodedR[:])

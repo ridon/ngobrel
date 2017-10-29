@@ -8,8 +8,8 @@ const bitsize = 256
 const Keysize = bitsize/8
 
 type KeyPair struct {
-  publicKey PublicKey
-  privateKey PrivateKey
+  PublicKey PublicKey
+  PrivateKey PrivateKey
 }
 
 func Generate(random io.Reader) (*KeyPair, error) {
@@ -27,8 +27,8 @@ func Generate(random io.Reader) (*KeyPair, error) {
   privateKey := NewPrivateKey(priv)
   publicKey := NewPublicKey(pub)
   pair := KeyPair {
-    publicKey: *publicKey,
-    privateKey: *privateKey,
+    PublicKey: *publicKey,
+    PrivateKey: *privateKey,
   }
 
   return &pair, nil
