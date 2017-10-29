@@ -32,7 +32,7 @@ func NewPublicKey(key [Keysize]byte) *PublicKey {
   return &ret
 }
 
-func (t *PublicKey) Verify(message []byte, signature *[64]byte) bool {
+func (t *PublicKey) Verify(message []byte, signature [64]byte) bool {
   var key [Keysize]byte;
   copy(key[:], t[:])
   key[31] &= 0x7F
@@ -51,5 +51,5 @@ func (t *PublicKey) Verify(message []byte, signature *[64]byte) bool {
 	A_ed[31] |= signature[63] & 0x80
 	signature[63] &= 0x7F
 
-  return ed25519.Verify(A_ed, message, *signature)
+  return ed25519.Verify(A_ed, message, signature)
 }

@@ -1,5 +1,6 @@
 package xeddsa
 import (
+  "crypto/rand"
   "crypto/sha512"
   "encoding/hex"
   "hash"
@@ -99,3 +100,13 @@ func (t *PrivateKey) DeriveKey(withOther PublicKey, hashFn func() hash.Hash, inf
   return x3dh.KDF(hashFn, shared[:32], info, length)
 }
 
+func (t *PrivateKey) SignPreKey() (*[Keysize * 2]byte, error) {
+  random := rand.Reader
+  var x, err = Generate(random)
+  if err != nil {
+    return nil, err
+  }
+
+  sig := t.Sign(random, x.PublicKey.Encode())
+  return sig, nil
+}

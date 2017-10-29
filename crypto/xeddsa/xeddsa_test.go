@@ -30,11 +30,11 @@ func TestSignVerify(t *testing.T) {
   var x, _ = Generate(rand.Reader)
   data := []byte("omama")
   sig := x.PrivateKey.Sign(rand.Reader, data)
-  if (x.PublicKey.Verify(data, sig) == false) {
+  if (x.PublicKey.Verify(data, *sig) == false) {
     t.Error("Signature can't be verified")
   }
   data[0] &= 0x80;
-  if (x.PublicKey.Verify(data, sig) == true) {
+  if (x.PublicKey.Verify(data, *sig) == true) {
     t.Error("Signature can't be verified after altered")
   }
   fmt.Printf("-->%s\n", hex.EncodeToString(sig[:]))
@@ -77,3 +77,17 @@ func TestDeriveKey(t *testing.T) {
   }
 }
 
+func TestSignedPreKey(t *testing.T) {
+  aliceKey,_ := Generate(rand.Reader)
+
+  spk, err := NewSignedPreKey(aliceKey.PrivateKey)
+
+  if err != nil {
+    t.Error("Error when creating SPK")
+  }
+
+  data := spk.PreKey.PublicKey.Encode()
+  if aliceKey.PublicKey.Verify(data, spk.Signature) == false {
+    t.Error("SPK is not verified")
+  }
+}
