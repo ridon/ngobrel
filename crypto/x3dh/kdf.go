@@ -1,14 +1,13 @@
 package x3dh
 
 import (
-  "github.com/ridon/ngobrel/crypto/xeddsa"
   "golang.org/x/crypto/hkdf"
   "hash"
   "io"
 )
 
 func KDF(hashFn func() hash.Hash, secret []byte, info string, length int) ([]byte, error) {
-  initData := make([]byte, xeddsa.Keysize)
+  initData := make([]byte, 32)
   for i := range initData {
     initData[i] = 0xff
   }
