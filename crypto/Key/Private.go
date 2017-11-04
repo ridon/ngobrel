@@ -99,3 +99,8 @@ func (t *Private) DeriveKey(withOther Public, hashFn func() hash.Hash, info stri
   return x3dh.KDF(hashFn, shared[:32], info, length)
 }
 
+func (t *Private) Clear() {
+  for i := 0; i < len(t); i ++ {
+    t[i] = 0
+  }
+}

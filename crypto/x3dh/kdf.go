@@ -24,7 +24,7 @@ func KDF(hashFn func() hash.Hash, secret []byte, info string, length int) ([]byt
   if err != nil {
     return nil, err
   }
-  if n != 32 {
+  if n != length {
     return nil, err
   }
   return kdf, err

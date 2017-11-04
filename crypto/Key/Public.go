@@ -10,7 +10,7 @@ import (
 type Public [32]byte
 
 func (t *Public) Encode() []byte {
-  return append([]byte{0x5}, t[:]...) 
+  return append([]byte{0x5}, t[:]...)
 }
 
 func Decode(data[]byte, offset int) (*Public, error) {

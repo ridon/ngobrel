@@ -34,3 +34,7 @@ func NewSignedPreKey(identityKey Private) (*SignedPreKey, error) {
   return ret, nil
 }
 
+func (s *SignedPreKeyPublic) Verify(pub Public) bool {
+  data := s.PublicKey.Encode()
+  return pub.Verify(data, s.Signature)
+}
