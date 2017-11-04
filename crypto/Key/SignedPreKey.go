@@ -4,9 +4,14 @@ import (
   "crypto/rand"
 )
 
-type SignedPreKey struct {
-  PreKey Pair
+type SignedPreKeyPublic struct {
+  PublicKey Public
   Signature [64]byte
+}
+
+type SignedPreKey struct {
+  PrivateKey Private
+  Public SignedPreKeyPublic
 }
 
 func NewSignedPreKey(identityKey Private) (*SignedPreKey, error) {
@@ -17,7 +22,14 @@ func NewSignedPreKey(identityKey Private) (*SignedPreKey, error) {
     return nil, err
   }
   sig := identityKey.Sign(random, preKey.PublicKey.Encode())
-  ret := &SignedPreKey{ *preKey, sig}
+  public := SignedPreKeyPublic{
+    PublicKey: preKey.PublicKey,
+    Signature: sig,
+  }
+  ret := &SignedPreKey{
+    PrivateKey: preKey.PrivateKey,
+    Public: public,
+  }
 
   return ret, nil
 }

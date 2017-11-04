@@ -86,8 +86,8 @@ func TestSignedPreKey(t *testing.T) {
     t.Error("Error when creating SPK")
   }
 
-  data := spk.PreKey.PublicKey.Encode()
-  if aliceKey.PublicKey.Verify(data, spk.Signature) == false {
+  data := spk.Public.PublicKey.Encode()
+  if aliceKey.PublicKey.Verify(data, spk.Public.Signature) == false {
     t.Error("SPK is not verified")
   }
 }
