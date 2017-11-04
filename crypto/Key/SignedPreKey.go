@@ -1,15 +1,15 @@
-package xeddsa
+package Key
 
 import (
   "crypto/rand"
 )
 
 type SignedPreKey struct {
-  PreKey KeyPair
+  PreKey Pair
   Signature [64]byte
 }
 
-func NewSignedPreKey(identityKey PrivateKey) (*SignedPreKey, error) {
+func NewSignedPreKey(identityKey Private) (*SignedPreKey, error) {
   random := rand.Reader
 
   preKey, err := Generate(random)
@@ -17,7 +17,8 @@ func NewSignedPreKey(identityKey PrivateKey) (*SignedPreKey, error) {
     return nil, err
   }
   sig := identityKey.Sign(random, preKey.PublicKey.Encode())
-  ret := &SignedPreKey{ *preKey, *sig}
+  ret := &SignedPreKey{ *preKey, sig}
 
   return ret, nil
 }
+

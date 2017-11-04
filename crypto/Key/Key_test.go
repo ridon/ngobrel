@@ -1,4 +1,4 @@
-package xeddsa
+package Key
 
 import (
   "crypto/sha512"
@@ -30,11 +30,11 @@ func TestSignVerify(t *testing.T) {
   var x, _ = Generate(rand.Reader)
   data := []byte("omama")
   sig := x.PrivateKey.Sign(rand.Reader, data)
-  if (x.PublicKey.Verify(data, *sig) == false) {
+  if (x.PublicKey.Verify(data, sig) == false) {
     t.Error("Signature can't be verified")
   }
   data[0] &= 0x80;
-  if (x.PublicKey.Verify(data, *sig) == true) {
+  if (x.PublicKey.Verify(data, sig) == true) {
     t.Error("Signature can't be verified after altered")
   }
   fmt.Printf("-->%s\n", hex.EncodeToString(sig[:]))
