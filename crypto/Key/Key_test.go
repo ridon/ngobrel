@@ -1,4 +1,4 @@
-package xeddsa
+package Key
 
 import (
   "crypto/sha512"
@@ -77,3 +77,17 @@ func TestDeriveKey(t *testing.T) {
   }
 }
 
+func TestSignedPreKey(t *testing.T) {
+  aliceKey,_ := Generate(rand.Reader)
+
+  spk, err := NewSignedPreKey(aliceKey.PrivateKey)
+
+  if err != nil {
+    t.Error("Error when creating SPK")
+  }
+
+  data := spk.Public.PublicKey.Encode()
+  if aliceKey.PublicKey.Verify(data, spk.Public.Signature) == false {
+    t.Error("SPK is not verified")
+  }
+}

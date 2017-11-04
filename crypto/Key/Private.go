@@ -1,36 +1,36 @@
-package xeddsa
+package Key
 import (
   "crypto/sha512"
   "encoding/hex"
   "hash"
   "github.com/ridon/ngobrel/crypto/x3dh"
   // ED25519 from golang/crypto/x
-  "github.com/ridon/ngobrel/crypto/xeddsa/internal/edwards25519"
+  "github.com/ridon/ngobrel/crypto/Key/internal/edwards25519"
   "io"
 )
 
-type PrivateKey [Keysize]byte
+type Private [32]byte
 
-func (t *PrivateKey) Encode() [Keysize + 1]byte {
-  var ret [Keysize+1]byte
+func (t *Private) Encode() [32 + 1]byte {
+  var ret [32+1]byte
   ret[0] = 0x5
   copy(ret[1:], t[:])
   return ret
 }
 
-func (t *PrivateKey) HexString() string{
+func (t *Private) HexString() string{
   return hex.EncodeToString(t[:])
 }
 
-func NewPrivateKey(key [Keysize]byte) *PrivateKey {
-  ret := PrivateKey(key)
+func NewPrivate(key [32]byte) *Private {
+  ret := Private(key)
   return &ret
 }
 
-func (t *PrivateKey) GetEd25519PublicKey() [Keysize]byte {
+func (t *Private) GetEd25519PublicKey() [32]byte {
   var A edwards25519.ExtendedGroupElement
-	var publicKey [Keysize]byte
-  var slice [Keysize]byte
+	var publicKey [32]byte
+  var slice [32]byte
   copy(slice[:], t[:])
   edwards25519.GeScalarMultBase(&A, &slice)
 	A.ToBytes(&publicKey)
@@ -38,16 +38,16 @@ func (t *PrivateKey) GetEd25519PublicKey() [Keysize]byte {
   return publicKey;
 }
 
-func (t *PrivateKey) Sign(random io.Reader, message []byte) *[Keysize * 2]byte {
-  var randomByte [Keysize * 2]byte
+func (t *Private) Sign(random io.Reader, message []byte) [64]byte {
+  var randomByte [64]byte
 	io.ReadFull(random, randomByte[:])
 
-  initData := make([]byte, Keysize)
+  initData := make([]byte, 32)
   for i := range initData {
     initData[i] = 0xff
   }
 
-  var hash[Keysize * 2]byte
+  var hash[64]byte
 	digest := sha512.New()
 	digest.Write(initData[:])
 	digest.Write(t[:])
@@ -55,47 +55,52 @@ func (t *PrivateKey) Sign(random io.Reader, message []byte) *[Keysize * 2]byte {
 	digest.Write(randomByte[:])
 	digest.Sum(hash[:0])
 
-  var hashReduced [Keysize]byte
+  var hashReduced [32]byte
 	edwards25519.ScReduce(&hashReduced, &hash)
 	var R edwards25519.ExtendedGroupElement
 	edwards25519.GeScalarMultBase(&R, &hashReduced)
 
-	var encodedR[Keysize]byte
+	var encodedR[32]byte
 	R.ToBytes(&encodedR)
 
   edPubKey := t.GetEd25519PublicKey()
 
-  var hramDigest [Keysize * 2]byte
+  var hramDigest [64]byte
 	digest.Reset()
 	digest.Write(encodedR[:])
 	digest.Write(edPubKey[:])
 	digest.Write(message)
 	digest.Sum(hramDigest[:0])
-	var hramDigestReduced [Keysize]byte
+	var hramDigestReduced [32]byte
 	edwards25519.ScReduce(&hramDigestReduced, &hramDigest)
 
-  var s [Keysize]byte
-  var slice[Keysize]byte
+  var s [32]byte
+  var slice[32]byte
   copy(slice[:], t[:])
 	edwards25519.ScMulAdd(&s, &hramDigestReduced, &slice, &hashReduced)
 
-	ret := new([Keysize * 2]byte)
+	var ret [64]byte
 	copy(ret[:], encodedR[:])
-	copy(ret[Keysize:], s[:])
-	ret[Keysize * 2 -1] |= edPubKey[Keysize - 1] & 0x80
+	copy(ret[32:], s[:])
+	ret[63] |= edPubKey[31] & 0x80
 
   return ret;
 }
 
-func (t *PrivateKey) ShareSecret(withOther PublicKey) [32]byte {
-  var key [Keysize]byte;
+func (t *Private) ShareSecret(withOther Public) [32]byte {
+  var key [32]byte;
   copy(key[:], t[:])
   return x3dh.GenerateSharedSecret(withOther, key)
 }
 
-func (t *PrivateKey) DeriveKey(withOther PublicKey, hashFn func() hash.Hash, info string, length int) ([]byte, error) {
+func (t *Private) DeriveKey(withOther Public, hashFn func() hash.Hash, info string, length int) ([]byte, error) {
   shared := t.ShareSecret(withOther)
 
   return x3dh.KDF(hashFn, shared[:32], info, length)
 }
 
+func (t *Private) Clear() {
+  for i := 0; i < len(t); i ++ {
+    t[i] = 0
+  }
+}

@@ -1,39 +1,38 @@
-package xeddsa
+package Key
 import (
   "encoding/hex"
   "errors"
   // ED25519 from golang/crypto/x
-  "github.com/ridon/ngobrel/crypto/xeddsa/internal/ed25519"
-  "github.com/ridon/ngobrel/crypto/xeddsa/internal/edwards25519"
+  "github.com/ridon/ngobrel/crypto/Key/internal/ed25519"
+  "github.com/ridon/ngobrel/crypto/Key/internal/edwards25519"
 )
 
-type PublicKey [Keysize]byte
+type Public [32]byte
 
-func (t *PublicKey) Encode() []byte {
-  return append([]byte{0x5}, t[:]...) 
+func (t *Public) Encode() []byte {
+  return append([]byte{0x5}, t[:]...)
 }
 
-func Decode(data[]byte, offset int) (*PublicKey, error) {
+func Decode(data[]byte, offset int) (*Public, error) {
   if data[offset] == 0x5 {
-    key := [Keysize]byte{}
+    key := [32]byte{}
     copy(key[:], data[offset + 1:])
-    return NewPublicKey(key), nil
+    return NewPublic(key), nil
   }
   return nil, errors.New("Keytype is not known")
 }
 
-
-func (t *PublicKey) HexString() string{
+func (t *Public) HexString() string{
   return hex.EncodeToString(t[:])
 }
 
-func NewPublicKey(key [Keysize]byte) *PublicKey {
-  ret := PublicKey(key)
+func NewPublic(key [32]byte) *Public {
+  ret := Public(key)
   return &ret
 }
 
-func (t *PublicKey) Verify(message []byte, signature *[64]byte) bool {
-  var key [Keysize]byte;
+func (t *Public) Verify(message []byte, signature [64]byte) bool {
+  var key [32]byte;
   copy(key[:], t[:])
   key[31] &= 0x7F
 
@@ -51,5 +50,5 @@ func (t *PublicKey) Verify(message []byte, signature *[64]byte) bool {
 	A_ed[31] |= signature[63] & 0x80
 	signature[63] &= 0x7F
 
-  return ed25519.Verify(A_ed, message, *signature)
+  return ed25519.Verify(A_ed, message, signature)
 }

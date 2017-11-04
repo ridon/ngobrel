@@ -1,19 +1,17 @@
-package xeddsa
+package Key
 
 import (
   "golang.org/x/crypto/curve25519"
   "io"
 )
-const bitsize = 256
-const Keysize = bitsize/8
 
-type KeyPair struct {
-  PublicKey PublicKey
-  PrivateKey PrivateKey
+type Pair struct {
+  PublicKey Public
+  PrivateKey Private
 }
 
-func Generate(random io.Reader) (*KeyPair, error) {
-  var priv, pub [Keysize]byte
+func Generate(random io.Reader) (*Pair, error) {
+  var priv, pub [32]byte
 
   _, err := io.ReadFull(random, priv[:])
 	if err != nil {
@@ -24,9 +22,9 @@ func Generate(random io.Reader) (*KeyPair, error) {
 	priv[31] |= 64
   curve25519.ScalarBaseMult(&pub, &priv)
 
-  privateKey := NewPrivateKey(priv)
-  publicKey := NewPublicKey(pub)
-  pair := KeyPair {
+  privateKey := NewPrivate(priv)
+  publicKey := NewPublic(pub)
+  pair := Pair {
     PublicKey: *publicKey,
     PrivateKey: *privateKey,
   }
