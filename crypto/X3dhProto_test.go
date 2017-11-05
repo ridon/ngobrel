@@ -10,9 +10,9 @@ import (
 
 
 /**
- This test X3DH protocol where Bob sends a message to Alice
+ This tests X3DH protocol where Bob sends a message to Alice
 */
-func TestProto(t *testing.T) {
+func TestX3dhProto(t *testing.T) {
   random := rand.Reader
 
   // 1. Bob uploads his public key bundles
