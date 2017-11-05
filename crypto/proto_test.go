@@ -65,7 +65,7 @@ func TestProto(t *testing.T) {
   bundleAlicePublic := bundleAlice.Public
 
   // 2. Bob gets the shared key
-  skBob, err := GetSharedKeyRecipient(message.EphKey, bundleBob, &bundleAlicePublic, message.PreKeyId, "Ridon")
+  skBob, err := GetSharedKeyRecipient(message, bundleBob, &bundleAlicePublic, "Ridon")
 
   if err != nil {
     t.Error(err)

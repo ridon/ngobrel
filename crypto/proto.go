@@ -53,7 +53,10 @@ func GetSharedKeySender(random io.Reader, ephKey *Key.Pair, me *Key.Bundle, you 
   return &sk, &oneTimePreKeyId, nil
 }
 
-func GetSharedKeyRecipient(ephKey *Key.Public, me *Key.Bundle, you *Key.BundlePublic, preKeyId  [32]byte, info string) (*[]byte, error){
+func GetSharedKeyRecipient(message *Message, me *Key.Bundle, you *Key.BundlePublic, info string) (*[]byte, error){
+  ephKey := message.EphKey
+  preKeyId := message.PreKeyId
+
   dh1 := me.Private.Spk.ShareSecret(you.Identity)
   dh2 := me.Private.Identity.ShareSecret(*ephKey)
   dh3 := me.Private.Spk.ShareSecret(*ephKey)
