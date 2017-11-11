@@ -4,7 +4,6 @@ import (
   "encoding/hex"
   "fmt"
   "github.com/ridon/ngobrel/crypto/Key"
-  "io"
   "testing"
 )
 
@@ -48,11 +47,9 @@ func TestX3dhProto(t *testing.T) {
   ad := append(bundleAlice.Public.Identity.Encode()[:], bundleBobPublic.Identity.Encode()[:]...)
 
   // 7. Alice creates the first message
-  var nonce[12]byte
-	io.ReadFull(random, nonce[:])
 
   msgToBeEncrypted := []byte("olala")
-  message, err := NewMessage(&bundleAlice.Public.Identity, &ephKey.PublicKey, *preKeyId, nonce[:], *sk, msgToBeEncrypted, ad)
+  message, err := NewMessage(&bundleAlice.Public.Identity, &ephKey.PublicKey, *preKeyId, *sk, msgToBeEncrypted, ad)
 
   if err != nil {
     t.Error(err)

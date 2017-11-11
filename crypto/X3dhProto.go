@@ -40,7 +40,9 @@ func GetSharedKeySender(random io.Reader, ephKey *Key.Pair, me *Key.Bundle, you 
     clear(&dh3)
   }
 
-  sk, err := x3dh.KDF(sha512.New, keys, info, skLen)
+  hashFn := sha512.New
+  salt := make([]byte, hashFn().Size())
+  sk, err := x3dh.KDF(hashFn, keys, salt, info, skLen)
   if err != nil || (err == nil && len(sk) != skLen) {
     if err != nil {
       return nil, nil, err
@@ -79,7 +81,9 @@ func GetSharedKeyRecipient(message *Message, me *Key.Bundle, you *Key.BundlePubl
     clear(&dh3)
   }
 
-  sk, err := x3dh.KDF(sha512.New, keys, info, skLen)
+  hashFn := sha512.New
+  salt := make([]byte, hashFn().Size())
+  sk, err := x3dh.KDF(hashFn, keys, salt, info, skLen)
   if err != nil || (err == nil && len(sk) != skLen) {
     if err != nil {
       return nil, err
