@@ -6,7 +6,7 @@ import (
   "io"
 )
 
-func KDF(hashFn func() hash.Hash, secret []byte, info string, length int) ([]byte, error) {
+func KDF(hashFn func() hash.Hash, secret []byte, salt []byte, info string, length int) ([]byte, error) {
   initData := make([]byte, 32)
   for i := range initData {
     initData[i] = 0xff
@@ -15,7 +15,6 @@ func KDF(hashFn func() hash.Hash, secret []byte, info string, length int) ([]byt
   data := make([]byte, 32 + len(secret))
   copy(data[:], initData[:])
   copy(data[32:], secret[:])
-  salt := make([]byte, hashFn().Size())
   infoByte := []byte(info)
 
   fn := hkdf.New(hashFn, data, salt, infoByte)
