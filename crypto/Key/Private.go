@@ -96,7 +96,8 @@ func (t *Private) ShareSecret(withOther Public) [32]byte {
 func (t *Private) DeriveKey(withOther Public, hashFn func() hash.Hash, info string, length int) ([]byte, error) {
   shared := t.ShareSecret(withOther)
 
-  return x3dh.KDF(hashFn, shared[:32], info, length)
+  salt := make([]byte, hashFn().Size())
+  return x3dh.KDF(hashFn, shared[:32], salt, info, length)
 }
 
 func (t *Private) Clear() {
