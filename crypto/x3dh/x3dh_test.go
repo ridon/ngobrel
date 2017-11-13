@@ -8,8 +8,9 @@ import (
 
 func TestKdf(t *testing.T) {
   secret := []byte("Omama")
+  salt := []byte("Omama")
   info := "Olala"
-  kdf, _ := KDF(sha512.New, secret, info, 32)
+  kdf, _ := KDF(sha512.New, secret, salt, info, 32)
   if (kdf == nil) {
     t.Error("KDF didn't give output")
   }

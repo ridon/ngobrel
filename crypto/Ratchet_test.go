@@ -44,36 +44,62 @@ func TestRatchetProto(t *testing.T) {
   ad := append(bundleAlice.Public.Identity.Encode()[:], bundleBobPublic.Identity.Encode()[:]...)
 
   aliceRatchet := NewRatchet()
-  err = aliceRatchet.InitSelf(random, &bundleBobPublic.Spk.PublicKey, *sk)
+  err = aliceRatchet.InitSelf(random, &bundleBobPublic.Spk.PublicKey, sk)
   if err != nil {
     t.Error(err)
   }
 
   msgToBeEncrypted := []byte("olala")
-  enc, err := aliceRatchet.encrypt(msgToBeEncrypted, ad)
+  enc, err := aliceRatchet.Encrypt(msgToBeEncrypted, ad)
   if err != nil {
     t.Error(err)
   }
 
   // Send enc and aliceRatchet's public data
 
-  alicePublic := aliceRatchet.SelfPair.PublicKey
   bobRatchet := NewRatchet()
   pair := Key.Pair {
     PrivateKey: bundleBob.Private.Spk,
     PublicKey: bundleBob.Public.Spk.PublicKey,
   }
-  bobRatchet.InitRemote(&pair, *sk)
-  bobRatchet.turn(random, &alicePublic)
+  bobRatchet.InitRemote(&pair, sk)
 
-  dec, err := bobRatchet.decrypt(*enc, ad)
+  dec, err := bobRatchet.Decrypt(enc, ad)
   if err != nil {
     t.Error(err)
   }
 
-  if hex.EncodeToString(*dec) != hex.EncodeToString(msgToBeEncrypted) {
+  if hex.EncodeToString(dec) != hex.EncodeToString(msgToBeEncrypted) {
     t.Error("Unable to decrypt")
   }
   fmt.Printf("")
+
+  return
+  // ---------------------------------
+  // bob replies back
+
+  err = bobRatchet.InitSelf(random, &aliceRatchet.SelfPair.PublicKey, nil)
+  if err != nil {
+    t.Error(err)
+  }
+
+  pairAlice := aliceRatchet.SelfPair
+  aliceRatchet.InitRemote(pairAlice, nil)
+
+  msgToBeEncrypted = []byte("olala")
+  enc, err = bobRatchet.Encrypt(msgToBeEncrypted, ad)
+  if err != nil {
+    t.Error(err)
+  }
+
+  dec, err = aliceRatchet.Decrypt(enc, ad)
+  if err != nil {
+    t.Error(err)
+  }
+
+  if hex.EncodeToString(dec) != hex.EncodeToString(msgToBeEncrypted) {
+    t.Error("Unable to decrypt")
+  }
+
 
 }

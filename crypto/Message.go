@@ -23,12 +23,12 @@ func NewMessage(identity *Key.Public, ephKey *Key.Public, id [32]byte, key []byt
     Identity: identity,
     EphKey: ephKey,
     PreKeyId: id,
-    Message: *e,
+    Message: e,
   }
   return &m, nil
 }
 
-func (msg *Message) DecryptMessage(key []byte, ad []byte) (*[]byte, error) {
+func (msg *Message) DecryptMessage(key []byte, ad []byte) ([]byte, error) {
   e, err := aead.Decrypt(key, msg.Message, ad, infoCipher)
   if err != nil {
     return nil, err

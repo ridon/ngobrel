@@ -16,12 +16,12 @@ func TestEncryptDecrypt(t *testing.T) {
   if err != nil {
     t.Error(err)
   }
-  dec, err := Decrypt(key[:], *enc, ad, info)
+  dec, err := Decrypt(key[:], enc, ad, info)
   if err != nil {
     t.Error(err)
   }
 
-  if !bytes.Equal(data, *dec) {
+  if !bytes.Equal(data, dec) {
     t.Error("Can't decrypt")
   }
 

@@ -30,7 +30,7 @@ func generateKeys(key []byte, info string) ([32]byte, [32]byte, [16]byte, error)
   return encKey, authKey, iv, nil
 }
 
-func Encrypt(key []byte, plainText []byte, ad []byte, info string) (*[]byte, error) {
+func Encrypt(key []byte, plainText []byte, ad []byte, info string) ([]byte, error) {
 
   encKey, authKey, iv, err := generateKeys(key, info)
   if err != nil {
@@ -54,11 +54,11 @@ func Encrypt(key []byte, plainText []byte, ad []byte, info string) (*[]byte, err
   sum := mac.Sum(nil)
 
   ret := append(padded[:], sum[:]...)
-  return &ret, nil
+  return ret, nil
 
 }
 
-func Decrypt(key []byte, cipherText []byte, ad []byte, info string) (*[]byte, error) {
+func Decrypt(key []byte, cipherText []byte, ad []byte, info string) ([]byte, error) {
 
   hashFn := sha512.New
   encKey, authKey, iv, err := generateKeys(key, info)
@@ -93,5 +93,5 @@ func Decrypt(key []byte, cipherText []byte, ad []byte, info string) (*[]byte, er
     return nil, err
   }
 
-  return &unpadded, nil
+  return unpadded, nil
 }

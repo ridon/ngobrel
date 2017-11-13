@@ -85,11 +85,11 @@ func TestX3dhProto(t *testing.T) {
     t.Error(err)
   }
 
-  if len(*decrypted) == 0 {
+  if len(decrypted) == 0 {
     t.Error("Decrypted data is zero length")
   }
 
-  if hex.EncodeToString(*decrypted) != hex.EncodeToString(msgToBeEncrypted) {
+  if hex.EncodeToString(decrypted) != hex.EncodeToString(msgToBeEncrypted) {
     t.Error("Can't decrypt")
   }
 
