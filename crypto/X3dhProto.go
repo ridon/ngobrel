@@ -18,7 +18,7 @@ func clear(a *[32]byte) {
 
 // This should be the same as AEAD key size
 const skLen = 32
-func GetSharedKeySender(random io.Reader, ephKey *Key.Pair, me *Key.Bundle, you *Key.BundlePublic, info string) (*[]byte, *[32]byte, error){
+func GetSharedKeySender(random io.Reader, ephKey *Key.Pair, me *Key.Bundle, you *Key.BundlePublic, info string) ([]byte, *[32]byte, error){
   dh1 := me.Private.Identity.ShareSecret(you.Spk.PublicKey)
   dh2 := ephKey.PrivateKey.ShareSecret(you.Identity)
   dh3 := ephKey.PrivateKey.ShareSecret(you.Spk.PublicKey)
@@ -52,10 +52,10 @@ func GetSharedKeySender(random io.Reader, ephKey *Key.Pair, me *Key.Bundle, you 
   }
   ephKey.PrivateKey.Clear()
 
-  return &sk, &oneTimePreKeyId, nil
+  return sk, &oneTimePreKeyId, nil
 }
 
-func GetSharedKeyRecipient(message *Message, me *Key.Bundle, you *Key.BundlePublic, info string) (*[]byte, error){
+func GetSharedKeyRecipient(message *Message, me *Key.Bundle, you *Key.BundlePublic, info string) ([]byte, error){
   ephKey := message.EphKey
   preKeyId := message.PreKeyId
 
@@ -93,5 +93,5 @@ func GetSharedKeyRecipient(message *Message, me *Key.Bundle, you *Key.BundlePubl
   }
   oneTimePreKeyPrivate.Clear()
 
-  return &sk, nil
+  return sk, nil
 }

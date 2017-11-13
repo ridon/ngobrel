@@ -78,7 +78,7 @@ func NewRatchet() *Ratchet {
   return &r
 }
 
-func (r *Ratchet) InitSelf(random io.Reader, remotePubKey *Key.Public, rk *[]byte) error {
+func (r *Ratchet) InitSelf(random io.Reader, remotePubKey *Key.Public, rk []byte) error {
   pair, err := Key.Generate(random)
   if err != nil {
     return err
@@ -87,9 +87,9 @@ func (r *Ratchet) InitSelf(random io.Reader, remotePubKey *Key.Public, rk *[]byt
   dh := pair.PrivateKey.ShareSecret(*remotePubKey)
   var rootKey = rk
   if rk == nil {
-    rootKey = &r.RootKey
+    rootKey = r.RootKey
   }
-  kdf, err := x3dh.KDF(sha512.New, dh[:], *rootKey, Info, 64)
+  kdf, err := x3dh.KDF(sha512.New, dh[:], rootKey, Info, 64)
   if err != nil {
     return err
   }
@@ -105,11 +105,11 @@ func (r *Ratchet) InitSelf(random io.Reader, remotePubKey *Key.Public, rk *[]byt
   return nil
 }
 
-func (r *Ratchet) InitRemote(remotePair *Key.Pair, rk *[]byte) {
+func (r *Ratchet) InitRemote(remotePair *Key.Pair, rk []byte) {
 
   r.SelfPair = remotePair
   if rk != nil {
-    r.RootKey = *rk
+    r.RootKey = rk
   }
   r.MessageNumberSelf = 0
   r.MessageNumberRemote = 0

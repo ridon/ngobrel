@@ -1,7 +1,7 @@
 package crypto
 import (
+  "bytes"
   "crypto/rand"
-  "encoding/hex"
   "fmt"
   "github.com/ridon/ngobrel/crypto/Key"
   "testing"
@@ -49,7 +49,7 @@ func TestX3dhProto(t *testing.T) {
   // 7. Alice creates the first message
 
   msgToBeEncrypted := []byte("olala")
-  message, err := NewMessage(&bundleAlice.Public.Identity, &ephKey.PublicKey, *preKeyId, *sk, msgToBeEncrypted, ad)
+  message, err := NewMessage(&bundleAlice.Public.Identity, &ephKey.PublicKey, *preKeyId, sk, msgToBeEncrypted, ad)
 
   if err != nil {
     t.Error(err)
@@ -68,19 +68,19 @@ func TestX3dhProto(t *testing.T) {
     t.Error(err)
   }
 
-  if hex.EncodeToString(*sk) != hex.EncodeToString(*skBob) {
+  if !bytes.Equal(sk, skBob) {
     t.Error("SK is different")
   }
 
   // 3. Bob creates the associated data
   adBob := append(bundleAlicePublic.Identity.Encode()[:], bundleBobPublic.Identity.Encode()[:]...)
 
-  if hex.EncodeToString(ad) != hex.EncodeToString(adBob) {
+  if !bytes.Equal(ad, adBob) {
     t.Error("SK is different")
   }
 
   // 4. Bob decrypts the message
-  decrypted, err := message.DecryptMessage(*skBob, adBob)
+  decrypted, err := message.DecryptMessage(skBob, adBob)
   if err != nil {
     t.Error(err)
   }
@@ -89,7 +89,7 @@ func TestX3dhProto(t *testing.T) {
     t.Error("Decrypted data is zero length")
   }
 
-  if hex.EncodeToString(decrypted) != hex.EncodeToString(msgToBeEncrypted) {
+  if !bytes.Equal(decrypted, msgToBeEncrypted) {
     t.Error("Can't decrypt")
   }
 

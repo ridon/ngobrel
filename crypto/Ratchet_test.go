@@ -49,6 +49,13 @@ func TestRatchetProto(t *testing.T) {
     t.Error(err)
   }
 
+  bobRatchet := NewRatchet()
+  pair := Key.Pair {
+    PrivateKey: bundleBob.Private.Spk,
+    PublicKey: bundleBob.Public.Spk.PublicKey,
+  }
+  bobRatchet.InitRemote(&pair, sk)
+
   msgToBeEncrypted := []byte("olala")
   enc, err := aliceRatchet.Encrypt(msgToBeEncrypted, ad)
   if err != nil {
@@ -56,13 +63,6 @@ func TestRatchetProto(t *testing.T) {
   }
 
   // Send enc and aliceRatchet's public data
-
-  bobRatchet := NewRatchet()
-  pair := Key.Pair {
-    PrivateKey: bundleBob.Private.Spk,
-    PublicKey: bundleBob.Public.Spk.PublicKey,
-  }
-  bobRatchet.InitRemote(&pair, sk)
 
   dec, err := bobRatchet.Decrypt(enc, ad)
   if err != nil {
@@ -74,19 +74,10 @@ func TestRatchetProto(t *testing.T) {
   }
   fmt.Printf("")
 
-  return
   // ---------------------------------
   // bob replies back
 
-  err = bobRatchet.InitSelf(random, &aliceRatchet.SelfPair.PublicKey, nil)
-  if err != nil {
-    t.Error(err)
-  }
-
-  pairAlice := aliceRatchet.SelfPair
-  aliceRatchet.InitRemote(pairAlice, nil)
-
-  msgToBeEncrypted = []byte("olala")
+  msgToBeEncrypted = []byte("olala2")
   enc, err = bobRatchet.Encrypt(msgToBeEncrypted, ad)
   if err != nil {
     t.Error(err)
@@ -100,6 +91,43 @@ func TestRatchetProto(t *testing.T) {
   if hex.EncodeToString(dec) != hex.EncodeToString(msgToBeEncrypted) {
     t.Error("Unable to decrypt")
   }
+
+  // ---------------------------------
+  // bob writes again 
+
+  msgToBeEncrypted = []byte("olala2")
+  enc, err = bobRatchet.Encrypt(msgToBeEncrypted, ad)
+  if err != nil {
+    t.Error(err)
+  }
+
+  dec, err = aliceRatchet.Decrypt(enc, ad)
+  if err != nil {
+    t.Error(err)
+  }
+
+  if hex.EncodeToString(dec) != hex.EncodeToString(msgToBeEncrypted) {
+    t.Error("Unable to decrypt")
+  }
+
+  // --------------------------------
+  // alice replies
+  msgToBeEncrypted = []byte("olala")
+  enc, err = aliceRatchet.Encrypt(msgToBeEncrypted, ad)
+  if err != nil {
+    t.Error(err)
+  }
+
+  dec, err = bobRatchet.Decrypt(enc, ad)
+  if err != nil {
+    t.Error(err)
+  }
+
+  if hex.EncodeToString(dec) != hex.EncodeToString(msgToBeEncrypted) {
+    t.Error("Unable to decrypt")
+  }
+  fmt.Printf("")
+
 
 
 }
