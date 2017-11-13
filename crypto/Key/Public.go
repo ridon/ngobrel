@@ -1,5 +1,6 @@
 package Key
 import (
+  "bytes"
   "encoding/hex"
   "errors"
   // ED25519 from golang/crypto/x
@@ -13,7 +14,18 @@ func (t *Public) Encode() []byte {
   return append([]byte{0x5}, t[:]...)
 }
 
-func Decode(data[]byte, offset int) (*Public, error) {
+func (t *Public) RawPublic() [32]byte {
+  return *t
+}
+
+func (t *Public) PublicKeyEquals(other *Public) bool {
+  if other == nil {
+    return false
+  }
+  return bytes.Equal(t[:], other[:])
+}
+
+func DecodePublic(data[]byte, offset int) (*Public, error) {
   if data[offset] == 0x5 {
     key := [32]byte{}
     copy(key[:], data[offset + 1:])
