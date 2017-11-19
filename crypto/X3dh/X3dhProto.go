@@ -1,10 +1,10 @@
-package crypto
+package X3dh
 
 import (
   "crypto/sha512"
   "errors"
   "github.com/ridon/ngobrel/crypto/Key"
-  "github.com/ridon/ngobrel/crypto/x3dh"
+  "github.com/ridon/ngobrel/crypto/Kdf"
   "io"
 )
 
@@ -42,7 +42,7 @@ func GetSharedKeySender(random io.Reader, ephKey *Key.Pair, me *Key.Bundle, you 
 
   hashFn := sha512.New
   salt := make([]byte, hashFn().Size())
-  sk, err := x3dh.KDF(hashFn, keys, salt, info, skLen)
+  sk, err := Kdf.KDF(hashFn, keys, salt, info, skLen)
   if err != nil || (err == nil && len(sk) != skLen) {
     if err != nil {
       return nil, nil, err
@@ -83,7 +83,7 @@ func GetSharedKeyRecipient(message *Message, me *Key.Bundle, you *Key.BundlePubl
 
   hashFn := sha512.New
   salt := make([]byte, hashFn().Size())
-  sk, err := x3dh.KDF(hashFn, keys, salt, info, skLen)
+  sk, err := Kdf.KDF(hashFn, keys, salt, info, skLen)
   if err != nil || (err == nil && len(sk) != skLen) {
     if err != nil {
       return nil, err

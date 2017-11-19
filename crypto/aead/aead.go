@@ -7,7 +7,7 @@ import (
   "crypto/hmac"
   "crypto/sha512"
   "errors"
-  "github.com/ridon/ngobrel/crypto/x3dh"
+  "github.com/ridon/ngobrel/crypto/Kdf"
   "github.com/richkzad/go-pkcs7"
 )
 
@@ -16,7 +16,7 @@ func generateKeys(key []byte, info string) ([32]byte, [32]byte, [16]byte, error)
   var empty16 [16]byte
   hashFn := sha512.New
   salt := make([]byte, hashFn().Size())
-  kdf, err := x3dh.KDF(hashFn, key[:], salt, info, 80)
+  kdf, err := Kdf.KDF(hashFn, key[:], salt, info, 80)
   if err != nil {
     return empty, empty, empty16, err
   }

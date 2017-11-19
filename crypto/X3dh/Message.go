@@ -1,4 +1,4 @@
-package crypto
+package X3dh 
 
 import (
   "github.com/ridon/ngobrel/crypto/aead"

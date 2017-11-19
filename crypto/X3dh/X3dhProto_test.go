@@ -1,4 +1,5 @@
-package crypto
+package X3dh
+
 import (
   "bytes"
   "crypto/rand"
@@ -6,7 +7,6 @@ import (
   "github.com/ridon/ngobrel/crypto/Key"
   "testing"
 )
-
 
 /**
  This tests X3DH protocol where Bob sends a message to Alice

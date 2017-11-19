@@ -1,4 +1,4 @@
-package crypto
+package Ratchet
 
 import (
   "crypto/hmac"
@@ -7,8 +7,8 @@ import (
   "encoding/binary"
   "errors"
   "github.com/ridon/ngobrel/crypto/aead"
+  "github.com/ridon/ngobrel/crypto/Kdf"
   "github.com/ridon/ngobrel/crypto/Key"
-  "github.com/ridon/ngobrel/crypto/x3dh"
   "io"
 )
 
@@ -89,7 +89,7 @@ func (r *Ratchet) InitSelf(random io.Reader, remotePubKey *Key.Public, rk []byte
   if rk == nil {
     rootKey = r.RootKey
   }
-  kdf, err := x3dh.KDF(sha512.New, dh[:], rootKey, Info, 64)
+  kdf, err := Kdf.KDF(sha512.New, dh[:], rootKey, Info, 64)
   if err != nil {
     return err
   }
@@ -202,7 +202,7 @@ func (r *Ratchet) turn(random io.Reader, remotePubKey *Key.Public) error {
   r.RemotePublic = remotePubKey
 
   dh := r.SelfPair.PrivateKey.ShareSecret(*remotePubKey)
-  kdf, err := x3dh.KDF(sha512.New, dh[:], r.RootKey, Info, 64)
+  kdf, err := Kdf.KDF(sha512.New, dh[:], r.RootKey, Info, 64)
 
   pair, err := Key.Generate(random)
   if err != nil {
@@ -213,7 +213,7 @@ func (r *Ratchet) turn(random io.Reader, remotePubKey *Key.Public) error {
   r.SelfPair = pair
 
   dh = r.SelfPair.PrivateKey.ShareSecret(*r.RemotePublic)
-  kdf, err = x3dh.KDF(sha512.New, dh[:], r.RootKey, Info, 64)
+  kdf, err = Kdf.KDF(sha512.New, dh[:], r.RootKey, Info, 64)
 
   pair, err = Key.Generate(random)
   if err != nil {
