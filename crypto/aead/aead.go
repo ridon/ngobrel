@@ -8,7 +8,6 @@ import (
   "crypto/sha512"
   "errors"
   "github.com/ridon/ngobrel/crypto/Kdf"
-  "github.com/richkzad/go-pkcs7"
 )
 
 func generateKeys(key []byte, info string) ([32]byte, [32]byte, [16]byte, error) {
@@ -42,10 +41,14 @@ func Encrypt(key []byte, plainText []byte, ad []byte, info string) ([]byte, erro
     return nil, err
   }
   encrypter := cipher.NewCBCEncrypter(c, iv[:])
-  padded, err := pkcs7.Pad(plainText, 16)
-  if err != nil {
-    return nil, err
-  }
+
+  plainTextLen := len(plainText)
+	padLen := 16 - plainTextLen % 16
+	padded := make([]byte, plainTextLen + padLen)
+	copy(padded, plainText)
+	for i := 0; i < padLen; i++ {
+		padded[plainTextLen + i] = byte(padLen)
+	}
   encrypter.CryptBlocks(padded, padded)
 
   mac := hmac.New(sha512.New, authKey[:])
@@ -88,10 +91,22 @@ func Decrypt(key []byte, cipherText []byte, ad []byte, info string) ([]byte, err
   result := cipherText[:pos]
   decrypter := cipher.NewCBCDecrypter(c, iv[:])
   decrypter.CryptBlocks(result, result)
-  unpadded, err := pkcs7.Unpad(result, 16)
-  if err != nil {
-    return nil, err
+
+  // https://gist.github.com/dmichael/5751886
+  resultLen := len(result)
+  endIndex := int(result[resultLen-1])
+
+  if endIndex <= 16 {
+    if 1 < endIndex {
+      for i := resultLen - endIndex; i < resultLen; i++ {
+        if result[resultLen-1] != result[i] {
+          return nil, errors.New("Unpad error")
+        }
+      }
+    }
+
+    return result[:resultLen-endIndex], nil
   }
 
-  return unpadded, nil
+  return nil, errors.New("Unpad error")
 }
