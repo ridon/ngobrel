@@ -55,6 +55,15 @@ type Session struct {
   Secrets map[HashId]SessionSecret
 }
 
+type MessageBundle map[HashId][]byte
+type Message struct {
+  Id [64]byte
+  Time time.Time
+  Data []byte
+  Sender string
+  SenderDeviceId HashId
+}
+
 func NewSelfDevice(id HashId, userId string) (*SelfDevice, error) {
   random := rand.Reader
   pair, err := Key.Generate(random)
@@ -169,7 +178,19 @@ func (s *Session) initReceiver(id HashId, message []byte) ([]byte, error) {
   return data, nil
 }
 
-func (s *Session) Encrypt(id HashId, data []byte) ([]byte, error){
+func (s *Session) Encrypt(data []byte) (*MessageBundle, error) {
+  ret := make(MessageBundle)
+  for id, _ := range s.Secrets {
+    msg, err := s.encrypt(id, data)
+    if err != nil {
+      return nil, err
+    }
+    ret[id] = msg
+  }
+  return &ret, nil
+}
+
+func (s *Session) encrypt(id HashId, data []byte) ([]byte, error){
   secrets, ok := s.Secrets[id]
   if ok == false {
     return nil, errors.New("Session is not available")
@@ -199,18 +220,19 @@ func (s *Session) Encrypt(id HashId, data []byte) ([]byte, error){
   return ret, nil
 }
 
-func (s *Session) Decrypt(id HashId, data []byte) ([]byte, error){
-  secrets, ok := s.Secrets[id]
+func (s *Session) Decrypt(message Message) ([]byte, error){
+  secrets, ok := s.Secrets[message.SenderDeviceId]
+  data := message.Data
   if ok == false {
-    msgdata, err := s.initReceiver(id, data)
+    msgData, err := s.initReceiver(message.SenderDeviceId, data)
     if err != nil {
       return nil, err //errors.New("Session is not available")
     }
-    secrets = s.Secrets[id]
-    data = msgdata
+    secrets = s.Secrets[message.SenderDeviceId]
+    data = msgData
   }
 
-  ratchet, ok := s.Ratchets[id]
+  ratchet, ok := s.Ratchets[message.SenderDeviceId]
   if ok == false {
     return nil, errors.New("Ratchet is not available")
   }

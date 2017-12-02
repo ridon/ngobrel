@@ -5,23 +5,14 @@ import (
   "bytes"
   "github.com/ridon/ngobrel/crypto/Key"
   "testing"
-  "time"
 )
 
 const AliceUserId = "+62-222-849-Alice"
 const BobUserId = "+62-111-948-Bob"
 
-type message struct {
-  id [64]byte
-  time time.Time
-  data []byte
-  sender string
-  senderDeviceId HashId
-}
-
 type deviceData struct {
   id HashId
-  messages []message
+  messages []Message
   bundle Key.BundlePublic
 }
 
@@ -33,7 +24,7 @@ type user struct {
 }
 
 type users map[string] user
-type mailboxes map[string] []message
+type mailboxes map[HashId] []Message
 
 type server struct {
   devices devices
@@ -45,29 +36,31 @@ func newServer() server {
   s := server {
     devices: make(map[HashId] deviceData),
     users: make(map[string] user),
-    mailbox: make(map[string] []message),
+    mailbox: make(map[HashId] []Message),
   }
   return s
 }
 
-func (s *server) downloadMessages(user string) []message {
-  mbox, _ := s.mailbox[user]
+func (s *server) downloadMessages(id HashId) []Message {
+  mbox, _ := s.mailbox[id]
   return mbox
 }
 
-func (s *server) uploadMessage(sender string, senderDeviceId HashId, to string, data []byte) {
-  mbox, ok := s.mailbox[to]
-  if ok == false {
-    mbox = make([]message, 0)
-  }
+func (s *server) uploadMessage(sender string, senderDeviceId HashId, to string, data MessageBundle) {
+  for id, v := range data {
+    mbox, ok := s.mailbox[id]
+    if ok == false {
+      mbox = make([]Message, 0)
+    }
 
-  msg := message {
-    data: data,
-    sender: sender,
-    senderDeviceId: senderDeviceId,
+    msg := Message {
+      Data: v,
+      Sender: sender,
+      SenderDeviceId: senderDeviceId,
+    }
+    mbox = append(mbox[:], msg)
+    s.mailbox[id] = mbox
   }
-  mbox = append(mbox[:], msg)
-  s.mailbox[to] = mbox
 }
 
 func (s *server) downloadBundle(userId string) map[HashId] Key.BundlePublic {
@@ -172,19 +165,31 @@ func TestDeviceState(t *testing.T) {
   // Bob downloads Alice's bundle
   bobAliceBundle := server.downloadBundle(AliceUserId)
 
+  // Alice starts to talk to Bob
   aliceSession := NewSession(aliceSelfDevice.Bundle, BobUserId, aliceBobBundle)
   aliceSession.InitSender()
   aliceMessage := []byte("alice-msg1")
-  aliceMessageEnc, err := aliceSession.Encrypt(bobDeviceId, aliceMessage)
+
+  // Alice encrypts her message
+  aliceMessageEnc, err := aliceSession.Encrypt(aliceMessage)
   if err != nil {
     t.Error(err)
   }
-  server.uploadMessage(AliceUserId, aliceDeviceId, BobUserId, aliceMessageEnc)
+  if aliceMessageEnc == nil {
+    t.Error("Message is not available")
+  }
+  // Alice upload her message
+  server.uploadMessage(AliceUserId, aliceDeviceId, BobUserId, *aliceMessageEnc)
 
+  // Bob starts the session upon receiving a notification
+  // about an incoming message from Alice
   bobSession := NewSession(bobSelfDevice.Bundle, AliceUserId, bobAliceBundle)
-  bobMessageEncs := server.downloadMessages(BobUserId)
+
+  // Bob downloads the messages from his one particular device
+  bobMessageEncs := server.downloadMessages(bobDeviceId)
   for _, v := range bobMessageEncs {
-    bobMessageDec, err := bobSession.Decrypt(aliceDeviceId, v.data)
+    // Then it decrypts the message
+    bobMessageDec, err := bobSession.Decrypt(v)
     if err != nil {
       t.Error(err)
     }
@@ -193,6 +198,33 @@ func TestDeviceState(t *testing.T) {
     }
   }
 
+  bobMessage := []byte("bob-msg1-alice-msg1")
+  // Bob replies back
+  bobMessageEnc, err := bobSession.Encrypt(bobMessage)
+  if err != nil {
+    t.Error(err)
+  }
+  if bobMessageEnc == nil {
+    t.Error("Message is not available")
+  }
+
+  // Bob uploads the message
+  server.uploadMessage(BobUserId, bobDeviceId, AliceUserId, *bobMessageEnc)
+  // and some notification may happen on Alice's side
+  // then Alice downloads new messages
+  aliceMessageEncs := server.downloadMessages(aliceDeviceId)
+  for _, v := range aliceMessageEncs {
+    // And decrypts them
+    aliceMessageDec, err := aliceSession.Decrypt(v)
+    if err != nil {
+      t.Error(err)
+    }
+    if !bytes.Equal(aliceMessageDec, bobMessage) {
+      t.Error("Decrypt failed")
+    }
+  }
+
+  // Done 
   fmt.Println("")
 
 }
