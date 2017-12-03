@@ -43,6 +43,7 @@ func newServer() server {
 
 func (s *server) downloadMessages(id HashId) []Message {
   mbox, _ := s.mailbox[id]
+  delete(s.mailbox, id)
   return mbox
 }
 
@@ -106,7 +107,7 @@ func TestDeviceState(t *testing.T) {
   server := newServer();
 
   // Alice has an app
-  var aliceDeviceId HashId 
+  var aliceDeviceId HashId
   copy(aliceDeviceId[:], []byte("8d74beec1be996322ad76813bafb92d40839895d6dd7ee808b17ca201eac98be"))
   aliceSelfDevice, err := NewSelfDevice(aliceDeviceId, AliceUserId)
   if err != nil {
@@ -131,7 +132,7 @@ func TestDeviceState(t *testing.T) {
   if testAliceUser.devices[0].id != aliceDeviceId {
     t.Error ("Registration of device failed #2")
   }
-
+  
   // Bob also got one
   var bobDeviceId HashId
   copy(bobDeviceId[:], []byte("092fcfbbcfca3b5be7ae1b5e58538e92c35ab273ae13664fed0d67484c8e78a6"))
@@ -162,34 +163,39 @@ func TestDeviceState(t *testing.T) {
   // Alice downloads Bob's bundle
   aliceBobBundle := server.downloadBundle(BobUserId)
 
-  // Bob downloads Alice's bundle
-  bobAliceBundle := server.downloadBundle(AliceUserId)
+  // Alice loads or creates a new contact list
+  // Bob does that as well
+  aliceContacts := make(Contacts)
+  bobContacts := make(Contacts)
 
   // Alice starts to talk to Bob
-  aliceSession := NewSession(aliceSelfDevice.Bundle, BobUserId, aliceBobBundle)
-  aliceSession.InitSender()
+  aliceConversation := NewConversation(AliceUserId, &aliceContacts, aliceSelfDevice.Bundle, BobUserId, aliceBobBundle)
+  aliceConversation.InitSender()
   aliceMessage := []byte("alice-msg1")
 
   // Alice encrypts her message
-  aliceMessageEnc, err := aliceSession.Encrypt(aliceMessage)
+  aliceMessageEnc, err := aliceConversation.Encrypt(aliceMessage)
   if err != nil {
     t.Error(err)
   }
+
   if aliceMessageEnc == nil {
     t.Error("Message is not available")
   }
   // Alice upload her message
   server.uploadMessage(AliceUserId, aliceDeviceId, BobUserId, *aliceMessageEnc)
 
-  // Bob starts the session upon receiving a notification
+  // Bob starts a conversation upon receiving a notification
   // about an incoming message from Alice
-  bobSession := NewSession(bobSelfDevice.Bundle, AliceUserId, bobAliceBundle)
+  // Also, Bob downloads Alice's bundle
+  bobAliceBundle := server.downloadBundle(AliceUserId)
+  bobConversation := NewConversation(BobUserId, &bobContacts, bobSelfDevice.Bundle, AliceUserId, bobAliceBundle)
 
   // Bob downloads the messages from his one particular device
   bobMessageEncs := server.downloadMessages(bobDeviceId)
   for _, v := range bobMessageEncs {
     // Then it decrypts the message
-    bobMessageDec, err := bobSession.Decrypt(v)
+    bobMessageDec, err := bobConversation.Decrypt(v)
     if err != nil {
       t.Error(err)
     }
@@ -200,7 +206,7 @@ func TestDeviceState(t *testing.T) {
 
   bobMessage := []byte("bob-msg1-alice-msg1")
   // Bob replies back
-  bobMessageEnc, err := bobSession.Encrypt(bobMessage)
+  bobMessageEnc, err := bobConversation.Encrypt(bobMessage)
   if err != nil {
     t.Error(err)
   }
@@ -215,11 +221,43 @@ func TestDeviceState(t *testing.T) {
   aliceMessageEncs := server.downloadMessages(aliceDeviceId)
   for _, v := range aliceMessageEncs {
     // And decrypts them
-    aliceMessageDec, err := aliceSession.Decrypt(v)
+    aliceMessageDec, err := aliceConversation.Decrypt(v)
     if err != nil {
       t.Error(err)
     }
     if !bytes.Equal(aliceMessageDec, bobMessage) {
+      t.Error("Decrypt failed")
+    }
+  }
+
+  // And Alice replies back again
+  // This needs to be tested to check whether the session is correctly established
+  aliceMessage = []byte("alice-msg2")
+
+  if len(aliceContacts[BobUserId].ActiveSession) == 0 {
+    t.Error("Active session is not properly recorded")
+  }
+  // Alice encrypts her message
+  aliceMessageEnc, err = aliceConversation.Encrypt(aliceMessage)
+  if err != nil {
+    t.Error(err)
+  }
+
+  if aliceMessageEnc == nil {
+    t.Error("Message is not available")
+  }
+  // Alice upload her message
+  server.uploadMessage(AliceUserId, aliceDeviceId, BobUserId, *aliceMessageEnc)
+
+  // Bob downloads the messages from his one particular device
+  bobMessageEncs = server.downloadMessages(bobDeviceId)
+  for _, v := range bobMessageEncs {
+    // Then it decrypts the message
+    bobMessageDec, err := bobConversation.Decrypt(v)
+    if err != nil {
+      t.Error(err)
+    }
+    if !bytes.Equal(bobMessageDec, aliceMessage) {
       t.Error("Decrypt failed")
     }
   }

@@ -53,8 +53,12 @@ func NewBundle(random io.Reader) (*Bundle, error) {
   return &bundle, nil
 }
 
+func (b *BundlePublic) PublicBundleEquals(other *BundlePublic) bool {
+  return b.Identity.PublicKeyEquals(&other.Identity)
+}
+
 func (b *Bundle) PopulatePreKeys(random io.Reader, size int) {
-  
+
   b.Private.PreKeys = make(map[BundleKey]Private)
   b.Public.PreKeys = make(map[BundleKey]Public)
   for i := 0; i < size; i ++ {
