@@ -1,8 +1,8 @@
-package crypto
+package Ratchet
 
 import (
   "crypto/rand"
-  "github.com/ridon/ngobrel/crypto/Key"
+  "github.com/ridon/ngobrel/core/Key"
   "testing"
 )
 

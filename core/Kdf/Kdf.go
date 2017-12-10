@@ -1,4 +1,4 @@
-package x3dh
+package Kdf
 
 import (
   "golang.org/x/crypto/hkdf"

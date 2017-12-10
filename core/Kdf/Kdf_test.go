@@ -1,4 +1,4 @@
-package x3dh
+package Kdf
 
 import (
   "crypto/sha512"

@@ -43,7 +43,7 @@ func TestSignVerify(t *testing.T) {
 func TestEncodeDecode(t *testing.T) {
   var x, _ = Generate(rand.Reader)
   encoded := x.PublicKey.Encode()
-  pk, _ := Decode(encoded, 0)
+  pk, _ := DecodePublic(encoded, 0)
   if pk == nil {
     t.Error("Can't decode encoded public key")
   }

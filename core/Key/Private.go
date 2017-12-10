@@ -3,9 +3,10 @@ import (
   "crypto/sha512"
   "encoding/hex"
   "hash"
-  "github.com/ridon/ngobrel/crypto/x3dh"
+  "github.com/ridon/ngobrel/core/Kdf"
   // ED25519 from golang/crypto/x
-  "github.com/ridon/ngobrel/crypto/Key/internal/edwards25519"
+  "github.com/ridon/ngobrel/core/Key/internal/edwards25519"
+  "golang.org/x/crypto/curve25519"
   "io"
 )
 
@@ -88,16 +89,23 @@ func (t *Private) Sign(random io.Reader, message []byte) [64]byte {
 }
 
 func (t *Private) ShareSecret(withOther Public) [32]byte {
-  var key [32]byte;
-  copy(key[:], t[:])
-  return x3dh.GenerateSharedSecret(withOther, key)
+  var s [32]byte
+  copy(s[:], t[:])
+
+  var r [32]byte
+  copy(r[:], withOther[:])
+
+  var sharedSecret [32]byte
+  curve25519.ScalarMult(&sharedSecret, &s, &r)
+
+	return sharedSecret
 }
 
 func (t *Private) DeriveKey(withOther Public, hashFn func() hash.Hash, info string, length int) ([]byte, error) {
   shared := t.ShareSecret(withOther)
 
   salt := make([]byte, hashFn().Size())
-  return x3dh.KDF(hashFn, shared[:32], salt, info, length)
+  return Kdf.KDF(hashFn, shared[:32], salt, info, length)
 }
 
 func (t *Private) Clear() {

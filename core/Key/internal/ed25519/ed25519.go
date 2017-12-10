@@ -21,7 +21,7 @@ import (
 	"io"
 	"strconv"
 
-	"github.com/ridon/ngobrel/crypto/Key/internal/edwards25519"
+	"github.com/ridon/ngobrel/core/Key/internal/edwards25519"
 )
 
 const (

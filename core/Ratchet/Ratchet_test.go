@@ -1,10 +1,11 @@
-package crypto
+package Ratchet
 
 import (
   "crypto/rand"
   "encoding/hex"
   "fmt"
-  "github.com/ridon/ngobrel/crypto/Key"
+  "github.com/ridon/ngobrel/core/Key"
+  "github.com/ridon/ngobrel/core/X3dh"
   "testing"
 )
 
@@ -35,7 +36,7 @@ func TestRatchetProto(t *testing.T) {
   // 4. Alice creates a shared key
   // 5. Alice clears the ephemeral key and keys' content
 
-  sk, _, err := GetSharedKeySender(random, ephKey, bundleAlice, &bundleBobPublic, "Ridon")
+  sk, _, err := X3dh.GetSharedKeySender(random, ephKey, bundleAlice, &bundleBobPublic, "Ridon")
   if err != nil {
     t.Error(err)
   }

@@ -1,12 +1,12 @@
-package crypto
+package X3dh
+
 import (
   "bytes"
   "crypto/rand"
   "fmt"
-  "github.com/ridon/ngobrel/crypto/Key"
+  "github.com/ridon/ngobrel/core/Key"
   "testing"
 )
-
 
 /**
  This tests X3DH protocol where Bob sends a message to Alice
@@ -94,4 +94,47 @@ func TestX3dhProto(t *testing.T) {
   }
 
   fmt.Printf("")
+}
+
+func TestEncodeDecodeMessage(t *testing.T) {
+  var i [32]byte
+  var e [32]byte
+  var k [32]byte
+  copy(i[:], []byte("e983f374794de9c64e3d1c1de1d490c075"))
+  copy(e[:], []byte("8fe2c645ad50e087da0296f1e7e22c0871"))
+  copy(k[:], []byte("2f7c71de750a2c43fd12f92ae298dba522"))
+
+  m := Message {
+    Identity: Key.NewPublic(i),
+    EphKey: Key.NewPublic(e),
+    PreKeyId: k,
+    Message: []byte("omama"),
+  }
+
+  me := m.EncodeMessage()
+
+  if len(me) != 32 + 1 + 32 + 1 + 32 + 5 {
+    t.Error("Encoding failed")
+  }
+
+  ms, err := DecodeMessage(me)
+  if err != nil {
+    t.Error(err)
+  }
+
+  if !ms.Identity.PublicKeyEquals(m.Identity) {
+    t.Error("Identity can't be decoded")
+  }
+
+  if !ms.EphKey.PublicKeyEquals(m.EphKey) {
+    t.Error("Eph key can't be decoded")
+  }
+  if !bytes.Equal(ms.PreKeyId[:], m.PreKeyId[:]) {
+    t.Error("PreKey can't be decoded")
+  }
+  fmt.Println(ms.Message, m.Message)
+  if !bytes.Equal(ms.Message, m.Message) {
+    t.Error("Message can't be decoded")
+  }
+
 }
