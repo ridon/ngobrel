@@ -3,8 +3,8 @@ package X3dh
 import (
   "crypto/sha512"
   "errors"
-  "github.com/ridon/ngobrel/crypto/Key"
-  "github.com/ridon/ngobrel/crypto/Kdf"
+  "github.com/ridon/ngobrel/core/Key"
+  "github.com/ridon/ngobrel/core/Kdf"
   "io"
 )
 
@@ -91,7 +91,9 @@ func GetSharedKeyRecipient(message *Message, me *Key.Bundle, you *Key.BundlePubl
       return nil, errors.New("KDF error")
     }
   }
-  oneTimePreKeyPrivate.Clear()
+  if oneTimePreKeyPrivate != nil {
+    oneTimePreKeyPrivate.Clear()
+  }
 
   return sk, nil
 }

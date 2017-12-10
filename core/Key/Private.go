@@ -3,9 +3,9 @@ import (
   "crypto/sha512"
   "encoding/hex"
   "hash"
-  "github.com/ridon/ngobrel/crypto/Kdf"
+  "github.com/ridon/ngobrel/core/Kdf"
   // ED25519 from golang/crypto/x
-  "github.com/ridon/ngobrel/crypto/Key/internal/edwards25519"
+  "github.com/ridon/ngobrel/core/Key/internal/edwards25519"
   "golang.org/x/crypto/curve25519"
   "io"
 )

@@ -4,8 +4,8 @@ import (
   "encoding/hex"
   "errors"
   // ED25519 from golang/crypto/x
-  "github.com/ridon/ngobrel/crypto/Key/internal/ed25519"
-  "github.com/ridon/ngobrel/crypto/Key/internal/edwards25519"
+  "github.com/ridon/ngobrel/core/Key/internal/ed25519"
+  "github.com/ridon/ngobrel/core/Key/internal/edwards25519"
 )
 
 type Public [32]byte

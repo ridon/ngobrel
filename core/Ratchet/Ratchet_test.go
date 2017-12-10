@@ -4,8 +4,8 @@ import (
   "crypto/rand"
   "encoding/hex"
   "fmt"
-  "github.com/ridon/ngobrel/crypto/Key"
-  "github.com/ridon/ngobrel/crypto/X3dh"
+  "github.com/ridon/ngobrel/core/Key"
+  "github.com/ridon/ngobrel/core/X3dh"
   "testing"
 )
 

@@ -5,9 +5,9 @@ import (
   "crypto/sha256"
   "encoding/binary"
   "errors"
-  "github.com/ridon/ngobrel/crypto/Key"
-  "github.com/ridon/ngobrel/crypto/Ratchet"
-  "github.com/ridon/ngobrel/crypto/X3dh"
+  "github.com/ridon/ngobrel/core/Key"
+  "github.com/ridon/ngobrel/core/Ratchet"
+  "github.com/ridon/ngobrel/core/X3dh"
   "time"
 )
 
@@ -18,6 +18,12 @@ type HashId [64]byte
 
 func (h *HashId) HashIdEquals(other HashId) bool {
   return bytes.Equal(h[:], other[:])
+}
+
+func NewHashId(data []byte) HashId {
+  var h [64]byte
+  copy(h[:], data[:])
+  return HashId(h)
 }
 
 type Contact struct {
@@ -55,6 +61,7 @@ type ConversationSecret struct {
 type Conversation struct {
   SelfBundle *Key.Bundle
   SelfName string
+  SelfDeviceId HashId
   RemoteName string
   RemotePublic map[HashId]Key.BundlePublic
   Ratchets map[HashId]Ratchet.Ratchet
@@ -68,7 +75,6 @@ type Message struct {
   Time time.Time
   Data []byte
   Sender string
-  SenderDeviceId HashId
 }
 
 func InitDevice(id HashId, device *Device) map[HashId]Device {
@@ -108,6 +114,58 @@ func (c Contacts) AddDevice(id string, device *Device) {
   }
 }
 
+func (c Contacts) findByName(id string) bool {
+  _, ok := c[id]
+  return ok
+}
+func (c Contacts) deleteStaleUsers(id string) {
+  timeNil := time.Time{}
+  if c[id].StaleDate == timeNil {
+    delete(c, id)
+  }
+}
+func (c Contacts) addNewDevicesIfEmpty(id string, cv *Conversation) {
+  if c[id].Devices == nil {
+    cid := c[id]
+    cid.Devices = make(map[HashId]Device)
+    c[id] = cid
+    for idRemote, vRemote := range cv.RemotePublic {
+      c[id].Devices[idRemote] = Device {
+        Id: idRemote,
+        PublicKey: &vRemote.Identity,
+      }
+    }
+  } else {
+    for idRemote, vRemote := range cv.RemotePublic {
+      for idLocal, vLocal := range c[id].Devices {
+        if idLocal == idRemote {
+          // Delete local record if not the same with remote
+          if vLocal.PublicKey != nil && !vRemote.Identity.PublicKeyEquals(vLocal.PublicKey) {
+            delete(c[id].Devices, idLocal)
+            c[id].Devices[idLocal] = Device {
+              Id: idLocal,
+              PublicKey: &vRemote.Identity,
+            }
+          }
+        }
+      }
+    }
+  }
+}
+func (c Contacts) addNewContactIfEmpty(id string, cv *Conversation) {
+  // Contact doesn't exist, add it
+  c[id] = Contact {
+    Id: id,
+    Devices: make(map[HashId]Device),
+    StaleDate: time.Time{},
+  }
+  for idRemote, vRemote := range cv.RemotePublic {
+    c[id].Devices[idRemote] = Device {
+      Id: idRemote,
+      PublicKey: &vRemote.Identity,
+    }
+  }
+}
 
 func NewSelfDevice(id HashId, userId string) (*SelfDevice, error) {
   random := rand.Reader
@@ -120,7 +178,7 @@ func NewSelfDevice(id HashId, userId string) (*SelfDevice, error) {
   if err != nil {
     return nil, err
   }
-  bundle.PopulatePreKeys(random, 100)
+  bundle.PopulatePreKeys(random, 10)
   s := SelfDevice {
     Id: id,
     UserId: userId,
@@ -135,10 +193,6 @@ func NewSelfDevice(id HashId, userId string) (*SelfDevice, error) {
 // bundle map by device id
 func (s *Conversation) populateConversationSecrets(isSender bool) error {
   random := rand.Reader
-  ephKey, err := Key.Generate(random)
-  if err != nil {
-    return err
-  }
 
   s.Secrets  = make(map[HashId]ConversationSecret)
   s.Ratchets = make(map[HashId]Ratchet.Ratchet)
@@ -147,7 +201,14 @@ func (s *Conversation) populateConversationSecrets(isSender bool) error {
     r := s.Ratchets[id]
 
     if (isSender) {
+      ephKey, err := Key.Generate(random)
+      if err != nil {
+        return err
+      }
       k, preKeyId, err := X3dh.GetSharedKeySender(random, ephKey, s.SelfBundle, &v, RidonSesameSharedKey)
+      p := v.Spk.PublicKey
+      r.InitSelf(random, &p, k)
+
       m := []byte(RidonSecretMessage)
       ad := sha256.Sum256(append(s.SelfBundle.Public.Identity.Encode()[:], v.Identity.Encode()[:]...))
       message, err := X3dh.NewMessage(&s.SelfBundle.Public.Identity, &ephKey.PublicKey, *preKeyId, k, m, ad[:])
@@ -161,21 +222,19 @@ func (s *Conversation) populateConversationSecrets(isSender bool) error {
         Size: uint64(len(encoded)),
         Message: encoded,
       }
-      p := s.RemotePublic[id].Spk.PublicKey
-      r.InitSelf(random, &p, k)
     } else {
-      s.Secrets[id] = ConversationSecret {
-      }
+      s.Secrets[id] = ConversationSecret {}
     }
     s.Ratchets[id] = r
   }
   return nil
 }
 
-func NewConversation(selfName string, contacts *Contacts, selfBundle *Key.Bundle, remoteName string, remote map[HashId]Key.BundlePublic) *Conversation {
+func NewConversation(selfName string, selfDeviceId HashId, contacts *Contacts, selfBundle *Key.Bundle, remoteName string, remote map[HashId]Key.BundlePublic) *Conversation {
   s := Conversation {
     SelfName: selfName,
     SelfBundle: selfBundle,
+    SelfDeviceId: selfDeviceId,
     RemoteName: remoteName,
     RemotePublic: remote,
     Contacts: contacts,
@@ -230,71 +289,36 @@ func (s *Conversation) prepEncrypt() {
     return
   }
   // Encryption preparation 
-  contacts := *s.Contacts
-  c, ok := contacts[s.RemoteName]
+  ok := s.Contacts.findByName(s.RemoteName)
   if ok != false {
     // Contact exists
-    timeNil := time.Time{}
     // 1. Delete stale records
-    if c.StaleDate == timeNil {
-      delete(contacts, s.RemoteName)
-    }
-    if c.Devices == nil {
-      // Empty devices
-      c.Devices = make(map[HashId]Device)
-      for idRemote, vRemote := range s.RemotePublic {
-        c.Devices[idRemote] = Device {
-          Id: idRemote,
-          PublicKey: &vRemote.Identity,
-        }
-      }
-    } else {
-      // 2. Check public key value 
-      for idRemote, vRemote := range s.RemotePublic {
-        for idLocal, vLocal := range c.Devices {
-          if idLocal == idRemote {
-            // 3. Delete local record if not the same with remote
-            if vLocal.PublicKey != nil && !vRemote.Identity.PublicKeyEquals(vLocal.PublicKey) {
-              delete(c.Devices, idLocal)
-              c.Devices[idLocal] = Device {
-                Id: idLocal,
-                PublicKey: &vRemote.Identity,
-              }
-            }
-          }
-        }
-      }
-    }
+    s.Contacts.deleteStaleUsers(s.RemoteName)
+    s.Contacts.addNewDevicesIfEmpty(s.RemoteName, s)
   } else {
-    // Contact doesn't exist, add it
-    contacts[s.RemoteName] = Contact {
-      Id: s.RemoteName,
-      Devices: make(map[HashId]Device),
-      StaleDate: time.Time{},
-    }
-    for idRemote, vRemote := range s.RemotePublic {
-      contacts[s.RemoteName].Devices[idRemote] = Device {
-        Id: idRemote,
-        PublicKey: &vRemote.Identity,
-      }
-    }
+    s.Contacts.addNewContactIfEmpty(s.RemoteName, s)
   }
-  s.Contacts = &contacts
+}
+
+func (c Contacts) fetchActiveSession(userId string) *HashId {
+  if len(c[userId].ActiveSession) > 0 {
+    return &c[userId].ActiveSession[0]
+  }
+  return nil
 }
 
 func (s *Conversation) Encrypt(data []byte) (*MessageBundle, error) {
   s.prepEncrypt()
   ret := make(MessageBundle)
-  contact := *s.Contacts
-
   // use an active session if any
-  if len(contact[s.RemoteName].ActiveSession) > 0 {
-    id := contact[s.RemoteName].ActiveSession[0]
-    msg, err := s.encrypt(id, data)
+  id := s.Contacts.fetchActiveSession(s.RemoteName)
+
+  if id != nil {
+    msg, err := s.encrypt(*id, data)
     if err != nil {
       return nil, err
     }
-    ret[id] = msg
+    ret[*id] = msg
   } else {
     // Prepare for all devices
     for id, _ := range s.Secrets {
@@ -325,6 +349,8 @@ func (s *Conversation) encrypt(id HashId, data []byte) ([]byte, error){
   }
 
   ret := make([]byte, 0)
+  ret = append(ret[:], s.SelfDeviceId[:]...)
+  ret = append(ret[:], id[:]...)
   if secrets.Size > 0 && secrets.Size == uint64(len(secrets.Message)) {
     sz := make([]byte, 8)
     binary.LittleEndian.PutUint64(sz, uint64(RidonSig))
@@ -338,6 +364,19 @@ func (s *Conversation) encrypt(id HashId, data []byte) ([]byte, error){
   return ret, nil
 }
 
+func (c Contacts) resetActiveSession(userId string, id HashId) {
+  list := make([]HashId, 0)
+  list = append(list[:], id)
+  for _, v := range c[userId].ActiveSession {
+    if !id.HashIdEquals(v) {
+      list = append(list[:], v)
+    }
+  }
+  contact := c[userId]
+  contact.ActiveSession = list
+  c[userId] = contact
+}
+
 func (s *Conversation) resetActiveSession(id HashId) {
   secrets, ok := s.Secrets[id]
   if ok && len(secrets.Message) > 0 {
@@ -345,33 +384,28 @@ func (s *Conversation) resetActiveSession(id HashId) {
     secrets.Message = make([]byte, 0)
     s.Secrets[id] = secrets
   }
-  list := make([]HashId, 0)
-  list = append(list[:], id)
-  c := *s.Contacts
-  contact := c[s.RemoteName]
-  for _, v := range contact.ActiveSession {
-    if !id.HashIdEquals(v) {
-      list = append(list[:], v)
-    }
-  }
-  contact.ActiveSession = list
-  c[s.RemoteName] = contact
-  s.Contacts = &c
+
+  s.Contacts.resetActiveSession(s.RemoteName, id)
 }
 
 func (s *Conversation) Decrypt(message Message) ([]byte, error){
-  secrets, ok := s.Secrets[message.SenderDeviceId]
-  data := message.Data
+  senderId := NewHashId(message.Data[:64])
+  recipientId := NewHashId(message.Data[64:128])
+  if (recipientId != s.SelfDeviceId) {
+    return nil, errors.New("Message recipient mismatch")
+  }
+  data := message.Data[128:]
+  secrets, ok := s.Secrets[senderId]
   if ok == false {
-    msgData, err := s.initReceiver(message.SenderDeviceId, data)
+    msgData, err := s.initReceiver(senderId, data)
     if err != nil {
-      return nil, err //errors.New("Conversation is not available")
+      return nil, err
     }
-    secrets = s.Secrets[message.SenderDeviceId]
+    secrets = s.Secrets[senderId]
     data = msgData
   }
 
-  ratchet, ok := s.Ratchets[message.SenderDeviceId]
+  ratchet, ok := s.Ratchets[senderId]
   if ok == false {
     return nil, errors.New("Ratchet is not available")
   }
@@ -380,7 +414,7 @@ func (s *Conversation) Decrypt(message Message) ([]byte, error){
   if err != nil {
     return nil, err
   }
-  s.resetActiveSession(message.SenderDeviceId)
+  s.resetActiveSession(senderId)
   return msg, nil
 }
 

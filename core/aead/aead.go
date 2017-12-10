@@ -7,7 +7,7 @@ import (
   "crypto/hmac"
   "crypto/sha512"
   "errors"
-  "github.com/ridon/ngobrel/crypto/Kdf"
+  "github.com/ridon/ngobrel/core/Kdf"
 )
 
 func generateKeys(key []byte, info string) ([32]byte, [32]byte, [16]byte, error) {

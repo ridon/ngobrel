@@ -2,8 +2,8 @@ package X3dh
 
 import (
   "errors"
-  "github.com/ridon/ngobrel/crypto/aead"
-  "github.com/ridon/ngobrel/crypto/Key"
+  "github.com/ridon/ngobrel/core/aead"
+  "github.com/ridon/ngobrel/core/Key"
 )
 type Message struct {
   Identity *Key.Public

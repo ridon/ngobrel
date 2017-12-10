@@ -4,7 +4,7 @@ import (
   "bytes"
   "crypto/rand"
   "fmt"
-  "github.com/ridon/ngobrel/crypto/Key"
+  "github.com/ridon/ngobrel/core/Key"
   "testing"
 )
 
