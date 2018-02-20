@@ -13,7 +13,7 @@ public class BundlePrivate {
   public final PrivateKey spk;
   Map<PreKeyId, PrivateKey> preKeys = new HashMap<>();
 
-  BundlePrivate(PrivateKey identity, PrivateKey spk) {
+  public BundlePrivate(PrivateKey identity, PrivateKey spk) {
     this.identity = identity;
     this.spk = spk;
   }
@@ -24,7 +24,6 @@ public class BundlePrivate {
 
   public void insert(PreKeyId id, PrivateKey key) {
     preKeys.put(id, key);
-
   }
 
   public PrivateKey fetch(PreKeyId id) {

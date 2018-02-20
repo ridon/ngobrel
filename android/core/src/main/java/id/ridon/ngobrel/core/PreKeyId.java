@@ -11,14 +11,14 @@ import java.util.Objects;
 public class PreKeyId {
   final byte[] preKeyId;
 
-  PreKeyId(byte[] id) throws InvalidKeyException {
+  public PreKeyId(byte[] id) throws InvalidKeyException {
     if (id.length != 32) {
       throw new InvalidKeyException();
     }
     preKeyId = id.clone();
   }
 
-  PreKeyId(byte[] id, int offset) throws InvalidKeyException {
+  public PreKeyId(byte[] id, int offset) throws InvalidKeyException {
     if (id.length + offset < 32) {
       throw new InvalidKeyException();
     }

@@ -10,7 +10,7 @@ public class SesameDevice {
   final PublicKey publicKey;
   Date staleTime;
 
-  SesameDevice(HashId id, PublicKey publicKey) {
+  public SesameDevice(HashId id, PublicKey publicKey) {
     this.id = id;
     this.publicKey = publicKey;
   }

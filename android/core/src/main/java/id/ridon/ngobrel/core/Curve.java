@@ -9,7 +9,7 @@ package id.ridon.ngobrel.core;
  * Based on work by Daniel J Bernstein, http://cr.yp.to/ecdh.html
  */
 
-class Curve {
+public class Curve {
 
   /* key size */
   public static final int KEY_SIZE = 32;

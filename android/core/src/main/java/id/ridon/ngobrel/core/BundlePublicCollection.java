@@ -15,14 +15,12 @@ import java.util.Set;
  * This class stores a mapping between a device id and a public bundle
  */
 
-class BundlePublicCollection {
+public class BundlePublicCollection {
   HashMap<HashId, BundlePublic> map = new HashMap<>();
 
-  BundlePublicCollection() {
+  public BundlePublicCollection() {}
 
-  }
-
-  BundlePublicCollection(HashId id, BundlePublic bundlePublic) {
+  public BundlePublicCollection(HashId id, BundlePublic bundlePublic) {
     map.put(id, bundlePublic);
   }
 
@@ -38,7 +36,7 @@ class BundlePublicCollection {
     return map.keySet();
   }
 
-  static BundlePublicCollection decode(byte[] raw) throws IOException, IllegalDataSizeException, InvalidKeyException, SignatureException {
+  public static BundlePublicCollection decode(byte[] raw) throws IOException, IllegalDataSizeException, InvalidKeyException, SignatureException {
     BundlePublicCollection me = new BundlePublicCollection();
     ByteArrayInputStream input = new ByteArrayInputStream(raw);
     byte[] b = new byte[4];

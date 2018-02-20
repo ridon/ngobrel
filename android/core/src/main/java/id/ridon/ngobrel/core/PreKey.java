@@ -7,7 +7,7 @@ public class PreKey {
   public final PublicKey publicKey;
   public final PreKeyId keyId;
 
-  PreKey(final PreKeyId keyId, final PublicKey publicKey) {
+  public PreKey(final PreKeyId keyId, final PublicKey publicKey) {
     this.keyId = keyId;
     this.publicKey = publicKey;
   }

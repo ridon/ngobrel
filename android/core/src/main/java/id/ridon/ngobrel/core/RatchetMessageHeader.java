@@ -1,16 +1,15 @@
 package id.ridon.ngobrel.core;
 
-import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.security.InvalidKeyException;
 
 public class RatchetMessageHeader {
-  final PublicKey publicKey;
-  final int chainLength;
-  final int messageNumber;
+  public final PublicKey publicKey;
+  public final int chainLength;
+  public final int messageNumber;
   public static final int SIZE = 4 + 4 + 33;
 
-  RatchetMessageHeader(final PublicKey publicKey, int chainLength, int messageNumber) {
+  public RatchetMessageHeader(final PublicKey publicKey, int chainLength, int messageNumber) {
     this.publicKey = publicKey;
     this.chainLength = chainLength;
     this.messageNumber = messageNumber;

@@ -10,8 +10,8 @@ import java.security.NoSuchAlgorithmException;
 public class X3dhMessage {
   final String infoCipher = Constants.X3DhMessageInfo;
   final PublicKey identity;
-  final PublicKey ephKey;
-  final PreKeyId preKeyId;
+  public final PublicKey ephKey;
+  public final PreKeyId preKeyId;
   final byte[] message;
 
   /**
@@ -23,7 +23,7 @@ public class X3dhMessage {
    * @param message An plaintext
    * @param ad An additional data
    */
-  X3dhMessage(PublicKey identity, PublicKey ephKey, PreKeyId preKeyId, byte[] key, byte[] message, byte[] ad)  throws EncryptionFailedException {
+  public X3dhMessage(PublicKey identity, PublicKey ephKey, PreKeyId preKeyId, byte[] key, byte[] message, byte[] ad)  throws EncryptionFailedException {
 
     this.identity = identity;
     this.ephKey = ephKey;
@@ -40,7 +40,7 @@ public class X3dhMessage {
    * @param preKeyId The pre key id
    * @param message An plaintext
    */
-  X3dhMessage(PublicKey identity, PublicKey ephKey, PreKeyId preKeyId, byte[] message) {
+  public X3dhMessage(PublicKey identity, PublicKey ephKey, PreKeyId preKeyId, byte[] message) {
     this.identity = identity;
     this.ephKey = ephKey;
     this.preKeyId = preKeyId;
