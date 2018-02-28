@@ -11,14 +11,14 @@ public class HashId {
   public static final int SIZE = 64;
   final byte[] hashId;
 
-  HashId(byte[] id) throws InvalidKeyException {
+  public HashId(byte[] id) throws InvalidKeyException {
     if (id.length != SIZE) {
       throw new InvalidKeyException();
     }
     hashId = id.clone();
   }
 
-  HashId(byte[] id, int offset) throws InvalidKeyException {
+  public HashId(byte[] id, int offset) throws InvalidKeyException {
     if (id.length + offset < SIZE) {
       throw new InvalidKeyException();
     }

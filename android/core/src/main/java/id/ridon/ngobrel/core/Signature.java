@@ -9,7 +9,7 @@ public final class Signature {
    * Creates a new Signature
    * @param seq A byte sequence containing the signature value
    */
-  Signature(byte[] seq) throws SignatureException {
+  public Signature(byte[] seq) throws SignatureException {
     if (seq.length != 64) {
       throw new SignatureException("Signature raw size invalid");
     }

@@ -19,21 +19,21 @@ import static javax.crypto.Mac.getInstance;
  * This represents a Ratchet mechanism
  */
 public class Ratchet {
-  KeyPair pairSender;
-  PublicKey publicRecipient;
+  public KeyPair pairSender;
+  public PublicKey publicRecipient;
 
-  Key rootKey;
-  Key chainKeySender;
-  Key chainKeyRecipient;
-  Key nextHeader;
-  Key header;
-  int messageNumberSender;
-  int messageNumberRecipient;
+  public Key rootKey;
+  public Key chainKeySender;
+  public Key chainKeyRecipient;
+  public Key nextHeader;
+  public Key header;
+  public int messageNumberSender;
+  public int messageNumberRecipient;
 
-  int chainLength;
-  HashMap<Key, RatchetMessageBuffer> skippedMessages;
+  public int chainLength;
+  public HashMap<Key, RatchetMessageBuffer> skippedMessages;
 
-  Ratchet() {
+  public Ratchet() {
     skippedMessages = new HashMap<>();
   }
 
@@ -66,7 +66,7 @@ public class Ratchet {
    * @param remotePublicKey PublicKey of the receiver
    * @param rootKey
    */
-  void initSender(PublicKey remotePublicKey, Key rootKey) throws  IllegalDataSizeException {
+  public void initSender(PublicKey remotePublicKey, Key rootKey) throws  IllegalDataSizeException {
     KeyPair pair = new KeyPair();
     byte[] dh = pair.privateKey.shareSecret(remotePublicKey);
 
@@ -329,7 +329,7 @@ public class Ratchet {
     return decrypted;
   }
 
-  void skipMessages(int num) throws TooManySkippedMessagesException, NoSuchAlgorithmException, InvalidKeyException, IllegalDataSizeException{
+  public void skipMessages(int num) throws TooManySkippedMessagesException, NoSuchAlgorithmException, InvalidKeyException, IllegalDataSizeException{
     if (messageNumberRecipient + Constants.MaxSkippedMessages < num) {
       throw new TooManySkippedMessagesException();
     }
@@ -363,7 +363,7 @@ public class Ratchet {
     }
   }
 
-  void turn(PublicKey remote) throws IllegalDataSizeException {
+  public void turn(PublicKey remote) throws IllegalDataSizeException {
     chainLength = messageNumberSender;
     messageNumberSender = 0;
     messageNumberRecipient = 0;

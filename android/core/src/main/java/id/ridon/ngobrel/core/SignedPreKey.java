@@ -12,7 +12,7 @@ public class SignedPreKey {
   final SignedPreKeyPublic pub;
   final PrivateKey priv;
 
-  SignedPreKey(PrivateKey key) throws IllegalDataSizeException, NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+  public SignedPreKey(PrivateKey key) throws IllegalDataSizeException, NoSuchAlgorithmException, InvalidKeyException, SignatureException {
     KeyPair preKey = new KeyPair();
 
     Signature sig = key.sign(preKey.publicKey.encode());
@@ -21,11 +21,11 @@ public class SignedPreKey {
     priv = preKey.privateKey;
   }
 
-  final SignedPreKeyPublic getPublic() {
+  public final SignedPreKeyPublic getPublic() {
     return pub;
   }
 
-  final PrivateKey getPrivateKey() {
+  public final PrivateKey getPrivateKey() {
     return priv;
   }
 }

@@ -14,7 +14,7 @@ public class BundlePublic {
   public final SignedPreKeyPublic spk;
   Map<PreKeyId, PublicKey> preKeys = new HashMap<>();
 
-  BundlePublic(PublicKey identity, SignedPreKeyPublic spk) {
+  public BundlePublic(PublicKey identity, SignedPreKeyPublic spk) {
     this.identity = identity;
     this.spk = spk;
   }

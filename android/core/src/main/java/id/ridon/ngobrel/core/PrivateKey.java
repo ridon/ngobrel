@@ -15,12 +15,12 @@ public class PrivateKey extends Key {
   public static final int ESIZE = SIZE + 1;
 
 
-  PrivateKey() {
+  public PrivateKey() {
     key = new byte[Key.SIZE];
     forSigning = new byte[Key.SIZE];
   }
 
-  PrivateKey(final byte[] key, final byte[] forSigning) throws IllegalDataSizeException {
+  public PrivateKey(final byte[] key, final byte[] forSigning) throws IllegalDataSizeException {
     super(key);
     this.forSigning = forSigning;
   }

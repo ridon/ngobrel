@@ -8,7 +8,7 @@ import java.security.SignatureException;
  * This class represents a Sesame sender device
  */
 public class SesameSenderDevice {
-  HashId id;
+  public HashId id;
   KeyPair pair;
   Bundle bundle;
   String userId;

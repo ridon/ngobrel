@@ -12,7 +12,7 @@ public class Key {
   public static final int ESIZE = SIZE + 1;
 
 
-  Key() {
+  public Key() {
     key = new byte[32];
   }
 
@@ -20,7 +20,7 @@ public class Key {
    * Creates a new Key object
    * @param key Key byte sequence
    */
-  Key(final byte[] key) throws IllegalDataSizeException {
+  public Key(final byte[] key) throws IllegalDataSizeException {
     this.key = new byte[32];
     if (key.length != 32) {
       throw new IllegalDataSizeException();

@@ -13,7 +13,7 @@ import static java.lang.System.*;
 
 public class PublicKey extends Key {
 
-  PublicKey(final byte[] key) throws IllegalDataSizeException {
+  public PublicKey(final byte[] key) throws IllegalDataSizeException {
     super(key);
   }
 

@@ -4,10 +4,10 @@ import java.nio.ByteBuffer;
 import java.security.InvalidKeyException;
 
 public class RatchetMessageBuffer {
-  final int number;
-  final Key key;
+  public final int number;
+  public final Key key;
 
-  RatchetMessageBuffer(int number, Key key) {
+  public RatchetMessageBuffer(int number, Key key) {
     this.number = number;
     this.key = key;
   }

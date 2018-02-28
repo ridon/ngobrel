@@ -1,6 +1,5 @@
 package id.ridon.ngobrel.core;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.*;
@@ -11,7 +10,7 @@ public final class KeyPair {
   public final PublicKey publicKey;
 
 
-  KeyPair() throws IllegalDataSizeException {
+  public KeyPair() throws IllegalDataSizeException {
     Random r = new SecureRandom();
     byte[] priv = new byte[32];
     r.nextBytes(priv);
@@ -23,7 +22,7 @@ public final class KeyPair {
     publicKey = new PublicKey(pubKey);
   }
 
-  KeyPair(final PrivateKey privateKey, final PublicKey publicKey) {
+  public KeyPair(final PrivateKey privateKey, final PublicKey publicKey) {
     this.privateKey = privateKey;
     this.publicKey = publicKey;
   }

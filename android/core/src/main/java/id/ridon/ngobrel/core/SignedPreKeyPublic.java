@@ -16,7 +16,7 @@ public class SignedPreKeyPublic {
    * @param pubKey The public key
    * @param sig The signature
    */
-  SignedPreKeyPublic(PublicKey pubKey, Signature sig) throws SignatureException{
+  public SignedPreKeyPublic(PublicKey pubKey, Signature sig) throws SignatureException{
     publicKey = pubKey;
     signature = sig;
   }

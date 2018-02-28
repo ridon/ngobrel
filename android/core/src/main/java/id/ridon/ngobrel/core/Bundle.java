@@ -9,7 +9,7 @@ public class Bundle {
   public final BundlePrivate bundlePrivate;
   public final BundlePublic bundlePublic;
 
-  Bundle() throws IllegalDataSizeException, NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+  public Bundle() throws IllegalDataSizeException, NoSuchAlgorithmException, InvalidKeyException, SignatureException {
     KeyPair pair = new KeyPair();
     SignedPreKey spk = new SignedPreKey(pair.privateKey);
 
@@ -17,7 +17,7 @@ public class Bundle {
     bundlePublic = new BundlePublic(pair.publicKey, spk.getPublic());
   }
 
-  void populatePreKeys() throws IllegalDataSizeException, NoSuchAlgorithmException, InvalidKeyException {
+  public void populatePreKeys() throws IllegalDataSizeException, NoSuchAlgorithmException, InvalidKeyException {
     for (int i = 0; i < Constants.MaxPreKeys; i ++) {
       KeyPair pair = new KeyPair();
       MessageDigest md = MessageDigest.getInstance("SHA-256");

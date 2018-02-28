@@ -14,7 +14,7 @@ public class SesameContact {
   ArrayList<HashId> activeSessions = new ArrayList<>();
   Date staleTime;
 
-  SesameContact(String id) {
+  public SesameContact(String id) {
     this.id = id;
     staleTime = new Date(0);
   }

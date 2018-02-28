@@ -37,7 +37,7 @@ public class SesameConversation {
    * @param recipientName The recipient username
    * @param recipientPublic The recipient public bundles for all devices
    */
-  SesameConversation(String senderName, HashId selfDeviceId, Bundle senderBundle, String recipientName, BundlePublicCollection recipientPublic) {
+  public SesameConversation(String senderName, HashId selfDeviceId, Bundle senderBundle, String recipientName, BundlePublicCollection recipientPublic) {
     this.senderName = senderName;
     this.senderBundle = senderBundle;
     this.selfDeviceId = selfDeviceId;
@@ -49,7 +49,7 @@ public class SesameConversation {
     populateSecrets(true);
   }
 
-  void populateSecrets(boolean isSender) throws NoSuchAlgorithmException, IllegalDataSizeException, EncryptionFailedException {
+  public void populateSecrets(boolean isSender) throws NoSuchAlgorithmException, IllegalDataSizeException, EncryptionFailedException {
     secrets = new HashMap<>();
     ratchets = new HashMap<>();
     Set<HashId> pubIds = recipientPublic.getIds();
@@ -89,7 +89,7 @@ public class SesameConversation {
     }
   }
 
-  byte[] initializeRecipient(HashId id, byte[] message) throws SignatureException, IllegalDataSizeException, InvalidKeyException, NoSuchAlgorithmException, EncryptionFailedException {
+  public byte[] initializeRecipient(HashId id, byte[] message) throws SignatureException, IllegalDataSizeException, InvalidKeyException, NoSuchAlgorithmException, EncryptionFailedException {
     ByteBuffer b = ByteBuffer.wrap(message, 0, 8);
     if (b.getInt() != Constants.RidonMagix) {
       throw new SignatureException();
@@ -130,7 +130,7 @@ public class SesameConversation {
     return data;
   }
 
-  void deleteStaleUser(String username) {
+  public void deleteStaleUser(String username) {
     Date zero = new Date(0);
 
     SesameContact contact = contacts.get(username);
@@ -139,7 +139,7 @@ public class SesameConversation {
     }
   }
 
-  void addNewDeviceIfEmpty(String id) {
+  public void addNewDeviceIfEmpty(String id) {
     SesameContact contact = contacts.get(id);
     if (contact == null) return;
 
@@ -173,7 +173,7 @@ public class SesameConversation {
     }
   }
 
-  void prepEncrypt() {
+  public void prepEncrypt() {
     if (senderName == recipientName) {
       return;
     }
@@ -187,7 +187,7 @@ public class SesameConversation {
     }
   }
 
-  void addNewContactIfEmpty(String id) {
+  public void addNewContactIfEmpty(String id) {
     SesameContact contact = new SesameContact(id);
 
     Set<HashId> pubIds = recipientPublic.getIds();
@@ -200,7 +200,7 @@ public class SesameConversation {
     contacts.put(id, contact);
   }
 
-  HashId fetchActiveSession(String id) {
+  public HashId fetchActiveSession(String id) {
     SesameContact contact = contacts.get(id);
     if (contact != null && contact.activeSessions.size() > 0) {
       return contact.activeSessions.get(0);
@@ -273,7 +273,7 @@ public class SesameConversation {
     return retval;
   }
 
-  byte[] doEncrypt(HashId id, byte[] data) throws IOException, EncryptionFailedException, IllegalDataSizeException, NoSuchAlgorithmException, InvalidKeyException, IOException {
+  public byte[] doEncrypt(HashId id, byte[] data) throws IOException, EncryptionFailedException, IllegalDataSizeException, NoSuchAlgorithmException, InvalidKeyException, IOException {
     SesameConversationSecret secret = secrets.get(id);
     if (secret == null) {
       throw new EncryptionFailedException();
@@ -305,7 +305,7 @@ public class SesameConversation {
     return ret.toByteArray();
   }
 
-  void resetActiveSession(HashId id) {
+  public void resetActiveSession(HashId id) {
     SesameConversationSecret secret = secrets.get(id);
     if (secret != null && secret.message.length > 0) {
       secret.message = new byte[0];
