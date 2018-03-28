@@ -38,13 +38,15 @@ public class PublicKey extends Key {
   /**
    * Verifies a message given a signature
    * @param message The message to be verified
+   * @param offset the offset of the message
+   * @param length the length of the message
    * @param signature The signature to verify
    * @return Whether the signature is valid or not
    * @throws SignatureException
    * @throws NoSuchAlgorithmException
    * @throws InvalidKeyException
    */
-  public boolean verify(byte[] message, id.ridon.ngobrel.core.Signature signature) throws SignatureException, NoSuchAlgorithmException, InvalidKeyException {
+  public boolean verify(byte[] message, int offset, int length, id.ridon.ngobrel.core.Signature signature) throws SignatureException, NoSuchAlgorithmException, InvalidKeyException {
 
     byte[] y = new byte[32];
     byte[] s1 = new byte[32];
@@ -54,7 +56,7 @@ public class PublicKey extends Key {
     System.arraycopy(sig, 32, s2, 0, 32);
 
     MessageDigest md = MessageDigest.getInstance("SHA-256");
-    md.update(message);
+    md.update(message, offset, length);
     md.update(key);
     byte[] digest = md.digest();
 
@@ -65,4 +67,19 @@ public class PublicKey extends Key {
 
     return Arrays.equals(md2.digest(), s1);
   }
+
+  /**
+   * Verifies a message given a signature
+   * @param message The message to be verified
+   * @param signature The signature to verify
+   * @return Whether the signature is valid or not
+   * @throws SignatureException
+   * @throws NoSuchAlgorithmException
+   * @throws InvalidKeyException
+   */
+  public boolean verify(byte[] message, id.ridon.ngobrel.core.Signature signature) throws SignatureException, NoSuchAlgorithmException, InvalidKeyException {
+    return verify(message, 0, message.length, signature);
+  }
+
+
 }

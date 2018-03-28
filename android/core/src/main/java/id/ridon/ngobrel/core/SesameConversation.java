@@ -45,11 +45,17 @@ public class SesameConversation {
     this.recipientPublic = recipientPublic;
   }
 
+  /**
+   * Initializes Sesame as sender
+   * @throws IllegalDataSizeException
+   * @throws NoSuchAlgorithmException
+   * @throws EncryptionFailedException
+   */
   public void initializeSender() throws IllegalDataSizeException, NoSuchAlgorithmException, EncryptionFailedException {
     populateSecrets(true);
   }
 
-  public void populateSecrets(boolean isSender) throws NoSuchAlgorithmException, IllegalDataSizeException, EncryptionFailedException {
+  private void populateSecrets(boolean isSender) throws NoSuchAlgorithmException, IllegalDataSizeException, EncryptionFailedException {
     secrets = new HashMap<>();
     ratchets = new HashMap<>();
     Set<HashId> pubIds = recipientPublic.getIds();
@@ -95,8 +101,7 @@ public class SesameConversation {
   int64    x3dh data size
   byte[]   x3dh data + data
    */
-
-  public byte[] initializeRecipient(HashId id, byte[] message, boolean skipInitSecrets) throws SignatureException, IllegalDataSizeException, InvalidKeyException, NoSuchAlgorithmException, EncryptionFailedException {
+  private byte[] initializeRecipient(HashId id, byte[] message, boolean skipInitSecrets) throws SignatureException, IllegalDataSizeException, InvalidKeyException, NoSuchAlgorithmException, EncryptionFailedException {
     ByteBuffer b = ByteBuffer.wrap(message, 0, 8);
     if (b.getInt() != Constants.RidonMagix) {
       throw new SignatureException();
@@ -184,7 +189,7 @@ public class SesameConversation {
     }
   }
 
-  public void prepEncrypt() {
+  private void prepEncrypt() {
     if (senderName == recipientName) {
       return;
     }
@@ -198,7 +203,7 @@ public class SesameConversation {
     }
   }
 
-  public void addNewContactIfEmpty(String id) {
+  private void addNewContactIfEmpty(String id) {
     SesameContact contact = new SesameContact(id);
 
     Set<HashId> pubIds = recipientPublic.getIds();
@@ -211,7 +216,7 @@ public class SesameConversation {
     contacts.put(id, contact);
   }
 
-  public HashId fetchActiveSession(String id) {
+  private HashId fetchActiveSession(String id) {
     SesameContact contact = contacts.get(id);
     if (contact != null && contact.activeSessions.size() > 0) {
       return contact.activeSessions.get(0);
@@ -219,9 +224,21 @@ public class SesameConversation {
     return null;
   }
 
+  /**
+   * Encrypts plain text
+   * @param data
+   * @return
+   * @throws EncryptionFailedException
+   * @throws NoSuchAlgorithmException
+   * @throws IllegalDataSizeException
+   * @throws InvalidKeyException
+   * @throws IOException
+   */
   public byte[] encrypt(byte[] data) throws EncryptionFailedException, NoSuchAlgorithmException, IllegalDataSizeException, InvalidKeyException, IOException {
     prepEncrypt();
+
     HashMap<HashId, byte[]> retval = new HashMap<>();
+
     HashId id = fetchActiveSession(recipientName);
 
     if (id != null) {
@@ -232,7 +249,6 @@ public class SesameConversation {
       Iterator<HashId> it = ids.iterator();
       while (it.hasNext()) {
         HashId hashId = it.next();
-        SesameConversationSecret secret = secrets.get(hashId);
         retval.put(hashId, doEncrypt(hashId, data));
       }
     }
@@ -284,7 +300,7 @@ public class SesameConversation {
     return retval;
   }
 
-  public byte[] doEncrypt(HashId id, byte[] data) throws IOException, EncryptionFailedException, IllegalDataSizeException, NoSuchAlgorithmException, InvalidKeyException, IOException {
+  private byte[] doEncrypt(HashId id, byte[] data) throws IOException, EncryptionFailedException, IllegalDataSizeException, NoSuchAlgorithmException, InvalidKeyException, IOException {
     SesameConversationSecret secret = secrets.get(id);
     if (secret == null) {
       throw new EncryptionFailedException();
@@ -330,7 +346,7 @@ public class SesameConversation {
     return ret.toByteArray();
   }
 
-  public void resetActiveSession(HashId id) {
+  private void resetActiveSession(HashId id) {
     SesameConversationSecret secret = secrets.get(id);
     if (secret != null && secret.message.length > 0) {
       secret.message = new byte[0];
@@ -381,6 +397,7 @@ public class SesameConversation {
       secret = secrets.get(senderId); // this should be populated now after init
       data = msgData;
     }
+    System.err.println("init check done");
 
     Ratchet ratchet = ratchets.get(senderId);
     if (ratchet == null) {
