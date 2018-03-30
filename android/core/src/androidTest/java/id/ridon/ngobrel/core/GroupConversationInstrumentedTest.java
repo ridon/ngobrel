@@ -216,6 +216,8 @@ public class GroupConversationInstrumentedTest {
     bobAliceGroupConversation.initRecipient(payload.contents);
 
     // Bob must know which messages he's not yet got from the server
+    // This must not in form of integer, a message ID-like form would do
+    // As long as it is kept in some records and no message is skipped
     int bobAliceGroupIndex = 0;
 
     byte[] groupEncryptedMessage = serverGetFromGroup(aliceGroupId, bobAliceGroupIndex++);
@@ -235,7 +237,6 @@ public class GroupConversationInstrumentedTest {
     serverPutToMailbox(encrypted);
 
     // He had a conversation with Alice but not with Charlie, so he must initiate conversation with Charlie
-
     BundlePublicCollection serverBobCharlieBundlePublicCollection = serverBundles.get(CharlieUserId);
     download = serverBobCharlieBundlePublicCollection.encode();
 
@@ -303,7 +304,7 @@ public class GroupConversationInstrumentedTest {
 
     // Get the first private message, came from Alice
     download = serverFetchEncrypted(charlieDevice.id);
-    decrypted = charlieAliceConversation.decrypt(download);
+    decrypted = charlieBobConversation.decrypt(download);
     payload = MessageExamplePayload.decode(decrypted);
     // Check whether this is a sender key message
     Assert.assertEquals(payload.type, 2);
@@ -313,12 +314,12 @@ public class GroupConversationInstrumentedTest {
     // This one is from Bob
     // In real life, you should do this differently
     download = serverFetchEncrypted(charlieDevice.id);
-
     decrypted = charlieBobConversation.decrypt(download);
     payload = MessageExamplePayload.decode(decrypted);
     // Check whether this is a sender key message
     Assert.assertEquals(payload.type, 2);
 
+/*
     charlieAliceGroupConversation.initRecipient(payload.contents);
 
 
@@ -332,7 +333,7 @@ public class GroupConversationInstrumentedTest {
     decrypted = charlieAliceGroupConversation.decrypt(download);
 
     Assert.assertArrayEquals(decrypted, message);
-
+*/
 
   }
 
