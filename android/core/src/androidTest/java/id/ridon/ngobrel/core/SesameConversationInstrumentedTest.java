@@ -108,6 +108,10 @@ public class SesameConversationInstrumentedTest {
     // The encrypted text is uploaded to server. Server then puts it in a mailbox
     serverPutToMailbox(encrypted);
 
+    encrypted = aliceConversation.encrypt(message.getBytes());
+
+    // The encrypted text is uploaded to server. Server then puts it in a mailbox
+    serverPutToMailbox(encrypted);
     // Server then -- in some way -- tells Bob that he has an incoming message
     // Bob then initiates a conversation on his side
     // He does that by downloading Alice's bundle
