@@ -37,6 +37,17 @@ public class BundlePublic {
     throw new NullPointerException();
   }
 
+  public PreKey fetch(PreKeyId preKeyId) {
+    PublicKey k = preKeys.get(preKeyId);
+    if (k == null) {
+      return null;
+    }
+
+    PreKey retval = new PreKey(preKeyId, k);
+    preKeys.remove(preKeyId);
+    return retval;
+  }
+
   public boolean equals(BundlePublic other) {
     return identity.equals(other.identity);
   }
