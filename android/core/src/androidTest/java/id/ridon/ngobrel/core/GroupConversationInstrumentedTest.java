@@ -231,23 +231,24 @@ public class GroupConversationInstrumentedTest {
 
     MessageExamplePayload bobSenderKeyPayload = new MessageExamplePayload(bobAliceGroupConversation.getSenderKey());
 
-    // And he must send it to both Alice and Charlie
-
+    // And he must send it to both Alice and Charlie.
+    // He had a conversation with Alice, and he can just send it
     encrypted = bobAliceConversation.encrypt(bobSenderKeyPayload.encode());
     serverPutToMailbox(encrypted);
 
-    // He had a conversation with Alice but not with Charlie, so he must initiate conversation with Charlie
+    // but not with Charlie, so he must initiate conversation with Charlie
     BundlePublicCollection serverBobCharlieBundlePublicCollection = serverBundles.get(CharlieUserId);
     download = serverBobCharlieBundlePublicCollection.encode();
-
     BundlePublicCollection bobCharlieBundlePublicCollection = BundlePublicCollection.decode(download);
 
     SesameConversation bobCharlieConversation = new SesameConversation(BobUserId, bobDevice.id, bobDevice.getBundle(), CharlieUserId, bobCharlieBundlePublicCollection);
     bobCharlieConversation.initializeSender();
 
+    // and send it to server
     encrypted = bobCharlieConversation.encrypt(bobSenderKeyPayload.encode());
     serverPutToMailbox(encrypted);
 
+    // After that, Bob can start to send messages to the group
     message = "Hello from Bob".getBytes();
     encrypted = bobAliceGroupConversation.encrypt(message);
     serverPutToGroup(aliceGroupId, encrypted);
@@ -292,19 +293,18 @@ public class GroupConversationInstrumentedTest {
     BundlePublicCollection serverCharlieAliceBundlePublicCollection = serverBundles.get(AliceUserId);
     download = serverCharlieAliceBundlePublicCollection.encode();
     BundlePublicCollection charlieAliceBundlePublicCollection = BundlePublicCollection.decode(download);
+    SesameConversation charlieAliceConversation = new SesameConversation(CharlieUserId, charlieDevice.id, charlieDevice.getBundle(), AliceUserId, charlieAliceBundlePublicCollection);
 
     BundlePublicCollection serverCharlieBobBundlePublicCollection = serverBundles.get(BobUserId);
     download = serverCharlieBobBundlePublicCollection.encode();
     BundlePublicCollection charlieBobBundlePublicCollection = BundlePublicCollection.decode(download);
-
-    SesameConversation charlieAliceConversation = new SesameConversation(CharlieUserId, charlieDevice.id, charlieDevice.getBundle(), AliceUserId, charlieAliceBundlePublicCollection);
     SesameConversation charlieBobConversation = new SesameConversation(CharlieUserId, charlieDevice.id, charlieDevice.getBundle(), BobUserId, charlieBobBundlePublicCollection);
 
     GroupConversation charlieAliceGroupConversation = new GroupConversation();
 
     // Get the first private message, came from Alice
     download = serverFetchEncrypted(charlieDevice.id);
-    decrypted = charlieBobConversation.decrypt(download);
+    decrypted = charlieAliceConversation.decrypt(download);
     payload = MessageExamplePayload.decode(decrypted);
     // Check whether this is a sender key message
     Assert.assertEquals(payload.type, 2);
@@ -319,9 +319,7 @@ public class GroupConversationInstrumentedTest {
     // Check whether this is a sender key message
     Assert.assertEquals(payload.type, 2);
 
-/*
     charlieAliceGroupConversation.initRecipient(payload.contents);
-
 
     int charlieAliceGroupIndex = 0;
     download = serverGetFromGroup(aliceGroupId, charlieAliceGroupIndex++);
@@ -333,7 +331,6 @@ public class GroupConversationInstrumentedTest {
     decrypted = charlieAliceGroupConversation.decrypt(download);
 
     Assert.assertArrayEquals(decrypted, message);
-*/
 
   }
 
