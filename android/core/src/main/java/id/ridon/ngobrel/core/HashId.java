@@ -74,13 +74,6 @@ public class HashId {
   }
 
   public String toString() {
-    char[] hexArray = "0123456789ABCDEF".toCharArray();
-    char[] hexChars = new char[hashId.length * 2];
-    for ( int j = 0; j < hashId.length; j++ ) {
-      int v = hashId[j] & 0xFF;
-      hexChars[j * 2] = hexArray[v >>> 4];
-      hexChars[j * 2 + 1] = hexArray[v & 0x0F];
-    }
-    return new String(hexChars);
+    return Utils.hexString(hashId);
   }
 }
