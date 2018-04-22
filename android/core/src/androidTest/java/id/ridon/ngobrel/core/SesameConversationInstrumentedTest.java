@@ -22,6 +22,8 @@ public class SesameConversationInstrumentedTest {
   final String CharlieUserId = "+62-333-008-Charlie";
 
   final HashId AliceDeviceId1 = HashId.random();
+  final HashId AliceDeviceId2 = HashId.random();
+
   final HashId BobDeviceId1 = HashId.random();
   final HashId BobDeviceId2 = HashId.random();
   final HashId CharlieDeviceId1 = HashId.random();
@@ -523,6 +525,122 @@ public class SesameConversationInstrumentedTest {
     // Check whether the decrypted is really the same with the image Alice sent in the first place
     Assert.assertEquals(Arrays.equals(decrypted, image), true);
 
+  }
+
+  @Test
+  public void testEncryptDecryptMultipleDevice2ndVariant() throws Exception {
+
+    // Alice got a device
+    SesameSenderDevice aliceDevice1 = new SesameSenderDevice(AliceDeviceId1, AliceUserId);
+    SesameSenderDevice aliceDevice2 = new SesameSenderDevice(AliceDeviceId2, AliceUserId);
+
+    // Alice uploads her bundle
+    byte[] aliceBundlePublicRaw1 = aliceDevice1.getBundle().bundlePublic.encode();
+    byte[] aliceBundlePublicRaw2 = aliceDevice2.getBundle().bundlePublic.encode();
+
+    // She sents the AliceDeviceId1 and the above raw data
+    // Server keeps it
+    // according to the device and user
+    BundlePublicCollection aliceBundlePublicCollection = new BundlePublicCollection(AliceDeviceId1, BundlePublic.decode(aliceBundlePublicRaw1));
+    aliceBundlePublicCollection.put(AliceDeviceId2, BundlePublic.decode(aliceBundlePublicRaw2));
+    serverBundles.put(AliceUserId, aliceBundlePublicCollection);
+
+    // Bob has two devices
+    SesameSenderDevice bobDevice1 = new SesameSenderDevice(BobDeviceId1, BobUserId);
+    SesameSenderDevice bobDevice2 = new SesameSenderDevice(BobDeviceId2, BobUserId);
+
+    // and uploads his
+    byte[] bobBundlePublicRaw1 = bobDevice1.getBundle().bundlePublic.encode();
+    byte[] bobBundlePublicRaw2 = bobDevice2.getBundle().bundlePublic.encode();
+
+    // Server then gets it
+    // and collect it by it's device id
+    BundlePublicCollection bobBundlePublicCollection = new BundlePublicCollection(BobDeviceId1, BundlePublic.decode(bobBundlePublicRaw1));
+    bobBundlePublicCollection.put(BobDeviceId2, BundlePublic.decode(bobBundlePublicRaw2));
+    serverBundles.put(BobUserId, bobBundlePublicCollection);
+
+    // Alice wants to send a message to Bob
+    // She downloads Bob's public bundle
+    // First, the server prepares it first and make it ready to be downloaded
+    BundlePublicCollection serverAliceBundlePublicCollection = serverBundles.get(BobUserId);
+    byte[] download = serverAliceBundlePublicCollection.encode();
+
+    // Alice got Bob's bundle public
+    BundlePublicCollection aliceBobBundlePublicCollection = BundlePublicCollection.decode(download);
+
+    // Alice starts a conversation with Bob
+    SesameConversation alice1Conversation = new SesameConversation(AliceUserId, aliceDevice1.id, aliceDevice1.getBundle(), BobUserId, aliceBobBundlePublicCollection);
+    alice1Conversation.initializeSender();
+
+    String message = "alice-msg1";
+
+    byte[] decrypted;
+    byte[] encrypted = alice1Conversation.encrypt(message.getBytes());
+
+    // The encrypted text is uploaded to server. Server then puts it in a mailbox
+    serverPutToMailbox(encrypted);
+
+    // Server then -- in some way -- tells Bob that he has an incoming message
+    // Bob then initiates a conversation on his side
+    // He does that by downloading Alice's bundle
+    BundlePublicCollection serverBobBundlePublicCollection = serverBundles.get(AliceUserId);
+    download = serverBobBundlePublicCollection.encode();
+
+    BundlePublicCollection bobAliceBundlePublicCollection = BundlePublicCollection.decode(download);
+
+    SesameConversation bobConversation = new SesameConversation(BobUserId, bobDevice2.id, bobDevice2.getBundle(), AliceUserId, bobAliceBundlePublicCollection);
+
+    // Bob downloads all the messages from bobDevice.id
+    while (true) {
+      download = serverFetchEncrypted(bobDevice2.id);
+      if (download == null) {
+        break;
+      }
+
+      decrypted = bobConversation.decrypt(download);
+      Assert.assertEquals(Arrays.equals(decrypted, message.getBytes()), true);
+    }
+
+    // Bob replies back
+    message = "bob-msg1-alice-msg1";
+    // Got NPE
+    encrypted = bobConversation.encrypt(message.getBytes());
+
+    // And uploads to server
+    serverPutToMailbox(encrypted);
+
+    // Alice downloads the messages
+    while (true) {
+      download = serverFetchEncrypted(aliceDevice1.id);
+      if (download == null) {
+        break;
+      }
+
+      decrypted = alice1Conversation.decrypt(download);
+      Assert.assertEquals(Arrays.equals(decrypted, message.getBytes()), true);
+    }
+
+    // Alice2 sent message to Bob
+    SesameConversation alice2Conversation = new SesameConversation(AliceUserId, aliceDevice2.id, aliceDevice2.getBundle(), BobUserId, aliceBobBundlePublicCollection);
+    alice2Conversation.initializeSender();
+
+    // Alice replies back
+    message = "alice-msg2";
+    encrypted = alice2Conversation.encrypt(message.getBytes());
+
+    // And uploads to server
+    serverPutToMailbox(encrypted);
+
+    // Bob downloads the message
+    while (true) {
+      download = serverFetchEncrypted(bobDevice2.id);
+      if (download == null) {
+        break;
+      }
+
+      decrypted = bobConversation.decrypt(download);
+      Assert.assertEquals(Arrays.equals(decrypted, message.getBytes()), true);
+    }
   }
 
 
