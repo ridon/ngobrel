@@ -58,6 +58,9 @@ public class GroupConversation {
    * @return byte array containing sender id and sender key
    */
   public byte[] getSenderKey() throws IOException {
+    // Make sure the sender key is obtained from the latest chain key
+    System.arraycopy(chainKeySender.raw(), 0, senderKey, 0, 32);
+
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     output.write(senderId.raw());
     output.write(senderKey);
