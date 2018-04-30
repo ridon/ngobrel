@@ -24,7 +24,11 @@ public class GroupConversationInstrumentedTest {
   final String DaveUserId = "+62-444-249-Dave";
 
   final HashId AliceDeviceId1 = HashId.random();
+  final HashId AliceDeviceId2 = HashId.random();
+
   final HashId BobDeviceId1 = HashId.random();
+  final HashId BobDeviceId2 = HashId.random();
+
   final HashId CharlieDeviceId1 = HashId.random();
   final HashId DaveDeviceId1 = HashId.random();
 
@@ -839,9 +843,6 @@ public class GroupConversationInstrumentedTest {
     encrypted = charlieAliceConversation.encrypt(charlieSenderKeyPayload.encode());
     serverPutToMailbox(encrypted);
 
-    SesameConversation charlieDaveConversation = establishConversation(CharlieUserId, charlieDevice, DaveUserId);
-    encrypted = charlieDaveConversation.encrypt(charlieSenderKeyPayload.encode());
-    serverPutToMailbox(encrypted);
 
     daveAliceGroupConversation.initSender(DaveDeviceId1);
     daveSenderKeyPayload = new MessageExamplePayload(daveAliceGroupConversation.getSenderKey());
@@ -871,11 +872,17 @@ public class GroupConversationInstrumentedTest {
     Assert.assertEquals(payload.type, 2);
     charlieAliceGroupConversation.initRecipient(payload.contents);
 
+    SesameConversation charlieDaveConversation = establishConversation(CharlieUserId, charlieDevice, DaveUserId);
+
     download = serverFetchEncrypted(charlieDevice.id);
     decrypted = charlieDaveConversation.decrypt(download);
     payload = MessageExamplePayload.decode(decrypted);
     Assert.assertEquals(payload.type, 2);
     charlieAliceGroupConversation.initRecipient(payload.contents);
+
+    encrypted = charlieDaveConversation.encrypt(charlieSenderKeyPayload.encode());
+    serverPutToMailbox(encrypted);
+
 
     // Dave sends message
     message = "Dave rules again!".getBytes();
@@ -909,211 +916,447 @@ public class GroupConversationInstrumentedTest {
 
   }
 
-    @Test
-    public void testEncryptDecryptBobChangesBundle() throws Exception {
-        SesameSenderDevice aliceDevice = initDevice(AliceDeviceId1, AliceUserId);
-        SesameSenderDevice bobDevice = initDevice(BobDeviceId1, BobUserId);
-        SesameSenderDevice charlieDevice = initDevice(CharlieDeviceId1, CharlieUserId);
+  // This tests a scenario where Bob changes his bundle
+  // The concept is Bob must send out his new sender key to all members
+  // and all members must send out their sender key to the new Bob
+  @Test
+  public void testEncryptDecryptBobChangesBundle() throws Exception {
+      SesameSenderDevice aliceDevice = initDevice(AliceDeviceId1, AliceUserId);
+      SesameSenderDevice bobDevice = initDevice(BobDeviceId1, BobUserId);
+      SesameSenderDevice charlieDevice = initDevice(CharlieDeviceId1, CharlieUserId);
 
-        byte[] encrypted, decrypted, download;
+      byte[] encrypted, decrypted, download;
 
-        // ======================================== ALICE's side of story ===================================================
-        HashId aliceGroupId = serverRegisterGroup();
+      // ======================================== ALICE's side of story ===================================================
+      HashId aliceGroupId = serverRegisterGroup();
 
-        SesameConversation aliceBobConversation = establishConversation(AliceUserId, aliceDevice, BobUserId);
-        aliceBobConversation.initializeSender();
+      SesameConversation aliceBobConversation = establishConversation(AliceUserId, aliceDevice, BobUserId);
+      aliceBobConversation.initializeSender();
 
-        SesameConversation aliceCharlieConversation = establishConversation(AliceUserId, aliceDevice, CharlieUserId);
-        aliceCharlieConversation.initializeSender();
+      SesameConversation aliceCharlieConversation = establishConversation(AliceUserId, aliceDevice, CharlieUserId);
+      aliceCharlieConversation.initializeSender();
 
-        GroupConversation aliceGroup = new GroupConversation();
-        aliceGroup.initSender(AliceDeviceId1);
-        MessageExamplePayload aliceSenderKeyPayload = new MessageExamplePayload(aliceGroup.getSenderKey());
+      GroupConversation aliceGroup = new GroupConversation();
+      aliceGroup.initSender(AliceDeviceId1);
+      MessageExamplePayload aliceSenderKeyPayload = new MessageExamplePayload(aliceGroup.getSenderKey());
 
-        // Alice sends senderKey
-        encrypted = aliceBobConversation.encrypt(aliceSenderKeyPayload.encode());
-        serverPutToMailbox(encrypted);
-        encrypted = aliceCharlieConversation.encrypt(aliceSenderKeyPayload.encode());
-        serverPutToMailbox(encrypted);
+      // Alice sends senderKey
+      encrypted = aliceBobConversation.encrypt(aliceSenderKeyPayload.encode());
+      serverPutToMailbox(encrypted);
+      encrypted = aliceCharlieConversation.encrypt(aliceSenderKeyPayload.encode());
+      serverPutToMailbox(encrypted);
 
-        // And alice keeps the sender key for herself, so she can read whatever she sent to the group
-        aliceGroup.initRecipient(aliceSenderKeyPayload.contents);
+      // And alice keeps the sender key for herself, so she can read whatever she sent to the group
+      aliceGroup.initRecipient(aliceSenderKeyPayload.contents);
 
-        // That's it for setting up a group conversation.
-        // Next she can send her first message to the group
-        byte[] message = "Welcome".getBytes();
+      // That's it for setting up a group conversation.
+      // Next she can send her first message to the group
+      byte[] message = "Welcome".getBytes();
 
-        encrypted = aliceGroup.encrypt(message);
-        serverPutToGroup(aliceGroupId, encrypted);
+      encrypted = aliceGroup.encrypt(message);
+      serverPutToGroup(aliceGroupId, encrypted);
 
-        // == BOB's story ===============================================================================================
+      // == BOB's story ===============================================================================================
 
-        SesameConversation bobAliceConversation = establishConversation(BobUserId, bobDevice, AliceUserId);
+      SesameConversation bobAliceConversation = establishConversation(BobUserId, bobDevice, AliceUserId);
 
-        MessageExamplePayload payload = null;
-        download = serverFetchEncrypted(bobDevice.id);
+      MessageExamplePayload payload = null;
+      download = serverFetchEncrypted(bobDevice.id);
 
-        decrypted = bobAliceConversation.decrypt(download);
-        payload = MessageExamplePayload.decode(decrypted);
-        // Check whether this is a sender key message
-        Assert.assertEquals(payload.type, 2);
+      decrypted = bobAliceConversation.decrypt(download);
+      payload = MessageExamplePayload.decode(decrypted);
+      // Check whether this is a sender key message
+      Assert.assertEquals(payload.type, 2);
 
-        GroupConversation bobAliceGroupConversation = new GroupConversation();
-        bobAliceGroupConversation.initRecipient(payload.contents);
+      GroupConversation bobAliceGroupConversation = new GroupConversation();
+      bobAliceGroupConversation.initRecipient(payload.contents);
 
-        // Bob must know which messages he's not yet got from the server
-        // In real life, this must not in form of integer, a message ID-like form would do
-        // As long as it is kept in some records and no message is skipped
-        int bobAliceGroupIndex = 0;
+      // Bob must know which messages he's not yet got from the server
+      // In real life, this must not in form of integer, a message ID-like form would do
+      // As long as it is kept in some records and no message is skipped
+      int bobAliceGroupIndex = 0;
 
-        byte[] groupEncryptedMessage = serverGetFromGroup(aliceGroupId, bobAliceGroupIndex++);
-        decrypted = bobAliceGroupConversation.decrypt(groupEncryptedMessage);
+      byte[] groupEncryptedMessage = serverGetFromGroup(aliceGroupId, bobAliceGroupIndex++);
+      decrypted = bobAliceGroupConversation.decrypt(groupEncryptedMessage);
 
-        Assert.assertArrayEquals(decrypted, message);
+      Assert.assertArrayEquals(decrypted, message);
 
-        // Then Bob wants to reply
-        // First he must generate his senderKey
-        bobAliceGroupConversation.initSender(BobDeviceId1);
+      // Then Bob wants to reply
+      // First he must generate his senderKey
+      bobAliceGroupConversation.initSender(BobDeviceId1);
 
-        MessageExamplePayload bobSenderKeyPayload = new MessageExamplePayload(bobAliceGroupConversation.getSenderKey());
-        bobAliceGroupConversation.initRecipient(bobSenderKeyPayload.contents);
+      MessageExamplePayload bobSenderKeyPayload = new MessageExamplePayload(bobAliceGroupConversation.getSenderKey());
+      bobAliceGroupConversation.initRecipient(bobSenderKeyPayload.contents);
 
-        // And he must send it to both Alice and Charlie.
-        // He had a conversation with Alice, and he can just send it
-        encrypted = bobAliceConversation.encrypt(bobSenderKeyPayload.encode());
-        serverPutToMailbox(encrypted);
+      // And he must send it to both Alice and Charlie.
+      // He had a conversation with Alice, and he can just send it
+      encrypted = bobAliceConversation.encrypt(bobSenderKeyPayload.encode());
+      serverPutToMailbox(encrypted);
 
-        // but not with Charlie, so he must initiate conversation with Charlie
-        SesameConversation bobCharlieConversation = establishConversation(BobUserId, bobDevice, CharlieUserId);
-        bobCharlieConversation.initializeSender();
+      // but not with Charlie, so he must initiate conversation with Charlie
+      SesameConversation bobCharlieConversation = establishConversation(BobUserId, bobDevice, CharlieUserId);
+      bobCharlieConversation.initializeSender();
 
-        // and send it to server
-        encrypted = bobCharlieConversation.encrypt(bobSenderKeyPayload.encode());
-        serverPutToMailbox(encrypted);
+      // and send it to server
+      encrypted = bobCharlieConversation.encrypt(bobSenderKeyPayload.encode());
+      serverPutToMailbox(encrypted);
 
-        // After that, Bob can start to send messages to the group
-        message = "Hello from Bob".getBytes();
-        encrypted = bobAliceGroupConversation.encrypt(message);
-        serverPutToGroup(aliceGroupId, encrypted);
+      // After that, Bob can start to send messages to the group
+      message = "Hello from Bob".getBytes();
+      encrypted = bobAliceGroupConversation.encrypt(message);
+      serverPutToGroup(aliceGroupId, encrypted);
 
-        // Alice reads the message
-        while (true) {
-            download = serverFetchEncrypted(aliceDevice.id);
-            if (download == null) {
-                break;
-            }
+      // Alice reads the message
+      while (true) {
+          download = serverFetchEncrypted(aliceDevice.id);
+          if (download == null) {
+              break;
+          }
 
-            decrypted = aliceBobConversation.decrypt(download);
-            payload = MessageExamplePayload.decode(decrypted);
-            // Check whether this is a sender key message
-            Assert.assertEquals(payload.type, 2);
+          decrypted = aliceBobConversation.decrypt(download);
+          payload = MessageExamplePayload.decode(decrypted);
+          // Check whether this is a sender key message
+          Assert.assertEquals(payload.type, 2);
 
-            // Before decrypting, alice initialize the sender key from the payload
-            aliceGroup.initRecipient(payload.contents);
-        }
+          // Before decrypting, alice initialize the sender key from the payload
+          aliceGroup.initRecipient(payload.contents);
+      }
 
-        int aliceAliceGroupIndex = 0;
+      int aliceAliceGroupIndex = 0;
 
-        download = serverGetFromGroup(aliceGroupId, aliceAliceGroupIndex++);
-        decrypted = aliceGroup.decrypt(download);
+      download = serverGetFromGroup(aliceGroupId, aliceAliceGroupIndex++);
+      decrypted = aliceGroup.decrypt(download);
 
-        // This is the first message Alice sent to the group
-        Assert.assertArrayEquals(decrypted, "Welcome".getBytes());
+      // This is the first message Alice sent to the group
+      Assert.assertArrayEquals(decrypted, "Welcome".getBytes());
 
-        download = serverGetFromGroup(aliceGroupId, aliceAliceGroupIndex++);
-        decrypted = aliceGroup.decrypt(download);
+      download = serverGetFromGroup(aliceGroupId, aliceAliceGroupIndex++);
+      decrypted = aliceGroup.decrypt(download);
 
-        // And this is the second message, coming from Bob
-        Assert.assertArrayEquals(decrypted, message);
+      // And this is the second message, coming from Bob
+      Assert.assertArrayEquals(decrypted, message);
 
 
-        // == Charlie's story ===============================================================================================
-        SesameConversation charlieAliceConversation = establishConversation(CharlieUserId, charlieDevice, AliceUserId);
-        SesameConversation charlieBobConversation = establishConversation(CharlieUserId, charlieDevice, BobUserId);
+      // == Charlie's story ===============================================================================================
+      SesameConversation charlieAliceConversation = establishConversation(CharlieUserId, charlieDevice, AliceUserId);
+      SesameConversation charlieBobConversation = establishConversation(CharlieUserId, charlieDevice, BobUserId);
 
-        GroupConversation charlieAliceGroupConversation = new GroupConversation();
+      GroupConversation charlieAliceGroupConversation = new GroupConversation();
 
-        // Get the first private message, came from Alice
-        download = serverFetchEncrypted(charlieDevice.id);
-        decrypted = charlieAliceConversation.decrypt(download);
-        payload = MessageExamplePayload.decode(decrypted);
-        // Check whether this is a sender key message
-        Assert.assertEquals(payload.type, 2);
+      // Get the first private message, came from Alice
+      download = serverFetchEncrypted(charlieDevice.id);
+      decrypted = charlieAliceConversation.decrypt(download);
+      payload = MessageExamplePayload.decode(decrypted);
+      // Check whether this is a sender key message
+      Assert.assertEquals(payload.type, 2);
 
-        charlieAliceGroupConversation.initRecipient(payload.contents);
+      charlieAliceGroupConversation.initRecipient(payload.contents);
 
-        // This one is from Bob
-        // In real life, you should do this differently (e.g. this should happen in an event handler)
-        download = serverFetchEncrypted(charlieDevice.id);
-        decrypted = charlieBobConversation.decrypt(download);
-        payload = MessageExamplePayload.decode(decrypted);
-        // Check whether this is a sender key message
-        Assert.assertEquals(payload.type, 2);
+      // This one is from Bob
+      // In real life, you should do this differently (e.g. this should happen in an event handler)
+      download = serverFetchEncrypted(charlieDevice.id);
+      decrypted = charlieBobConversation.decrypt(download);
+      payload = MessageExamplePayload.decode(decrypted);
+      // Check whether this is a sender key message
+      Assert.assertEquals(payload.type, 2);
 
-        charlieAliceGroupConversation.initRecipient(payload.contents);
+      charlieAliceGroupConversation.initRecipient(payload.contents);
 
-        int charlieAliceGroupIndex = 0;
-        download = serverGetFromGroup(aliceGroupId, charlieAliceGroupIndex++);
-        decrypted = charlieAliceGroupConversation.decrypt(download);
+      int charlieAliceGroupIndex = 0;
+      download = serverGetFromGroup(aliceGroupId, charlieAliceGroupIndex++);
+      decrypted = charlieAliceGroupConversation.decrypt(download);
 
-        Assert.assertArrayEquals(decrypted, "Welcome".getBytes());
+      Assert.assertArrayEquals(decrypted, "Welcome".getBytes());
 
-        download = serverGetFromGroup(aliceGroupId, charlieAliceGroupIndex++);
-        decrypted = charlieAliceGroupConversation.decrypt(download);
+      download = serverGetFromGroup(aliceGroupId, charlieAliceGroupIndex++);
+      decrypted = charlieAliceGroupConversation.decrypt(download);
 
-        Assert.assertArrayEquals(decrypted, message);
+      Assert.assertArrayEquals(decrypted, message);
 
-        // ------------------------------------------------------------------
-        // Bob changes bundle
-        // What he needs to do is just reinit the device and generate a new
-        // sender key and broadcasts it to all members
-        bobDevice = initDevice(BobDeviceId1, BobUserId);
-        bobAliceGroupConversation.initSender(BobDeviceId1);
-        bobSenderKeyPayload = new MessageExamplePayload(bobAliceGroupConversation.getSenderKey());
-        encrypted = bobAliceConversation.encrypt(bobSenderKeyPayload.encode());
-        serverPutToMailbox(encrypted);
+      // ------------------------------------------------------------------
+      // Bob changes bundle
+      // What he needs to do is just reinit the device and generate a new
+      // sender key and broadcasts it to all members
+      bobDevice = initDevice(BobDeviceId1, BobUserId);
+      bobAliceGroupConversation.initSender(BobDeviceId1);
+      bobSenderKeyPayload = new MessageExamplePayload(bobAliceGroupConversation.getSenderKey());
+      encrypted = bobAliceConversation.encrypt(bobSenderKeyPayload.encode());
+      serverPutToMailbox(encrypted);
 
-        encrypted = bobCharlieConversation.encrypt(bobSenderKeyPayload.encode());
-        serverPutToMailbox(encrypted);
+      encrypted = bobCharlieConversation.encrypt(bobSenderKeyPayload.encode());
+      serverPutToMailbox(encrypted);
 
-        // Then in some way, Bob broadcasts that the bundle is changed
-        // so Alice and Charlie can send their sender key
-        // we only do it for Alice in this example for simplicity
-        aliceSenderKeyPayload = new MessageExamplePayload(aliceGroup.getSenderKey());
-        encrypted = aliceBobConversation.encrypt(aliceSenderKeyPayload.encode());
-        serverPutToMailbox(encrypted);
+      // Then in some way, Bob broadcasts that the bundle is changed
+      // so Alice and Charlie can send their sender key
+      // we only do it for Alice in this example for simplicity
+      aliceSenderKeyPayload = new MessageExamplePayload(aliceGroup.getSenderKey());
+      encrypted = aliceBobConversation.encrypt(aliceSenderKeyPayload.encode());
+      serverPutToMailbox(encrypted);
 
-        // Then the broadcast is received by each Alice and Charlie
-        download = serverFetchEncrypted(aliceDevice.id);
-        decrypted = aliceBobConversation.decrypt(download);
-        payload = MessageExamplePayload.decode(decrypted);
-        Assert.assertEquals(payload.type, 2);
-        aliceGroup.initRecipient(payload.contents);
+      // Then the broadcast is received by each Alice and Charlie
+      download = serverFetchEncrypted(aliceDevice.id);
+      decrypted = aliceBobConversation.decrypt(download);
+      payload = MessageExamplePayload.decode(decrypted);
+      Assert.assertEquals(payload.type, 2);
+      aliceGroup.initRecipient(payload.contents);
 
-        download = serverFetchEncrypted(charlieDevice.id);
-        decrypted = charlieBobConversation.decrypt(download);
-        payload = MessageExamplePayload.decode(decrypted);
-        Assert.assertEquals(payload.type, 2);
-        charlieAliceGroupConversation.initRecipient(payload.contents);
+      download = serverFetchEncrypted(charlieDevice.id);
+      decrypted = charlieBobConversation.decrypt(download);
+      payload = MessageExamplePayload.decode(decrypted);
+      Assert.assertEquals(payload.type, 2);
+      charlieAliceGroupConversation.initRecipient(payload.contents);
 
-        // Bob also gets Alice latest sender key
-        download = serverFetchEncrypted(bobDevice.id);
-        decrypted = bobAliceConversation.decrypt(download);
-        payload = MessageExamplePayload.decode(decrypted);
-        Assert.assertEquals(payload.type, 2);
-        bobAliceGroupConversation.initRecipient(payload.contents);
+      // Bob also gets Alice latest sender key
+      download = serverFetchEncrypted(bobDevice.id);
+      decrypted = bobAliceConversation.decrypt(download);
+      payload = MessageExamplePayload.decode(decrypted);
+      Assert.assertEquals(payload.type, 2);
+      bobAliceGroupConversation.initRecipient(payload.contents);
 
-        // THen alice sends a message to the group
-        message = "Hello again".getBytes();
-        encrypted = aliceGroup.encrypt(message);
-        serverPutToGroup(aliceGroupId, encrypted);
+      // THen alice sends a message to the group
+      message = "Hello again".getBytes();
+      encrypted = aliceGroup.encrypt(message);
+      serverPutToGroup(aliceGroupId, encrypted);
 
-        // A new Bob can read the message
-        bobAliceGroupIndex++;
-        download = serverGetFromGroup(aliceGroupId, bobAliceGroupIndex++);
-        decrypted = bobAliceGroupConversation.decrypt(download);
-        Assert.assertArrayEquals(decrypted, "Hello again".getBytes());
+      // A new Bob can read the message
+      bobAliceGroupIndex++;
+      download = serverGetFromGroup(aliceGroupId, bobAliceGroupIndex++);
+      decrypted = bobAliceGroupConversation.decrypt(download);
+      Assert.assertArrayEquals(decrypted, "Hello again".getBytes());
+  }
+
+  // This tests a scenario where Bob add new device
+  // The concept is Bob must send out his new sender key to all members
+  // and all members must send out their sender key to the new Bob
+  @Test
+  public void testEncryptDecryptBobAddNewDevice() throws Exception {
+    SesameSenderDevice aliceDevice = initDevice(AliceDeviceId1, AliceUserId);
+    SesameSenderDevice bobDevice = initDevice(BobDeviceId1, BobUserId);
+    SesameSenderDevice charlieDevice = initDevice(CharlieDeviceId1, CharlieUserId);
+
+    byte[] encrypted, decrypted, download;
+
+    // ======================================== ALICE's side of story ===================================================
+    HashId aliceGroupId = serverRegisterGroup();
+
+    SesameConversation aliceBobConversation = establishConversation(AliceUserId, aliceDevice, BobUserId);
+    aliceBobConversation.initializeSender();
+
+    SesameConversation aliceCharlieConversation = establishConversation(AliceUserId, aliceDevice, CharlieUserId);
+    aliceCharlieConversation.initializeSender();
+
+    GroupConversation aliceGroup = new GroupConversation();
+    aliceGroup.initSender(AliceDeviceId1);
+    MessageExamplePayload aliceSenderKeyPayload = new MessageExamplePayload(aliceGroup.getSenderKey());
+
+    // Alice sends senderKey
+    encrypted = aliceBobConversation.encrypt(aliceSenderKeyPayload.encode());
+    serverPutToMailbox(encrypted);
+    encrypted = aliceCharlieConversation.encrypt(aliceSenderKeyPayload.encode());
+    serverPutToMailbox(encrypted);
+
+    // And alice keeps the sender key for herself, so she can read whatever she sent to the group
+    aliceGroup.initRecipient(aliceSenderKeyPayload.contents);
+
+    // That's it for setting up a group conversation.
+    // Next she can send her first message to the group
+    byte[] message = "Welcome".getBytes();
+
+    encrypted = aliceGroup.encrypt(message);
+    serverPutToGroup(aliceGroupId, encrypted);
+
+    // == BOB's story ===============================================================================================
+
+    SesameConversation bobAliceConversation = establishConversation(BobUserId, bobDevice, AliceUserId);
+
+    MessageExamplePayload payload = null;
+    download = serverFetchEncrypted(bobDevice.id);
+
+    decrypted = bobAliceConversation.decrypt(download);
+    payload = MessageExamplePayload.decode(decrypted);
+    // Check whether this is a sender key message
+    Assert.assertEquals(payload.type, 2);
+
+    GroupConversation bobAliceGroupConversation = new GroupConversation();
+    bobAliceGroupConversation.initRecipient(payload.contents);
+
+    // Bob must know which messages he's not yet got from the server
+    // In real life, this must not in form of integer, a message ID-like form would do
+    // As long as it is kept in some records and no message is skipped
+    int bobAliceGroupIndex = 0;
+
+    byte[] groupEncryptedMessage = serverGetFromGroup(aliceGroupId, bobAliceGroupIndex++);
+
+    decrypted = bobAliceGroupConversation.decrypt(groupEncryptedMessage);
+
+    Assert.assertArrayEquals(decrypted, message);
+
+    // Then Bob wants to reply
+    // First he must generate his senderKey
+    bobAliceGroupConversation.initSender(BobDeviceId1);
+
+    MessageExamplePayload bobSenderKeyPayload = new MessageExamplePayload(bobAliceGroupConversation.getSenderKey());
+    bobAliceGroupConversation.initRecipient(bobSenderKeyPayload.contents);
+
+    // And he must send it to both Alice and Charlie.
+    // He had a conversation with Alice, and he can just send it
+    encrypted = bobAliceConversation.encrypt(bobSenderKeyPayload.encode());
+    serverPutToMailbox(encrypted);
+
+    // but not with Charlie, so he must initiate conversation with Charlie
+    SesameConversation bobCharlieConversation = establishConversation(BobUserId, bobDevice, CharlieUserId);
+    bobCharlieConversation.initializeSender();
+
+    // and send it to server
+    encrypted = bobCharlieConversation.encrypt(bobSenderKeyPayload.encode());
+    serverPutToMailbox(encrypted);
+
+    // After that, Bob can start to send messages to the group
+    // BobMsg1
+    message = "Hello from Bob".getBytes();
+    encrypted = bobAliceGroupConversation.encrypt(message);
+    serverPutToGroup(aliceGroupId, encrypted);
+
+    // Alice reads the message
+    while (true) {
+      download = serverFetchEncrypted(aliceDevice.id);
+      if (download == null) {
+        break;
+      }
+
+      decrypted = aliceBobConversation.decrypt(download);
+      payload = MessageExamplePayload.decode(decrypted);
+      // Check whether this is a sender key message
+      Assert.assertEquals(payload.type, 2);
+
+      // Before decrypting, alice initialize the sender key from the payload
+      aliceGroup.initRecipient(payload.contents);
     }
+
+    int aliceAliceGroupIndex = 0;
+
+    download = serverGetFromGroup(aliceGroupId, aliceAliceGroupIndex++);
+    decrypted = aliceGroup.decrypt(download);
+
+    // This is the first message Alice sent to the group
+    Assert.assertArrayEquals(decrypted, "Welcome".getBytes());
+
+    download = serverGetFromGroup(aliceGroupId, aliceAliceGroupIndex++);
+    decrypted = aliceGroup.decrypt(download);
+
+    // And this is the second message, coming from Bob
+    Assert.assertArrayEquals(decrypted, message);
+
+
+    // == Charlie's story ===============================================================================================
+    SesameConversation charlieAliceConversation = establishConversation(CharlieUserId, charlieDevice, AliceUserId);
+    SesameConversation charlieBobConversation = establishConversation(CharlieUserId, charlieDevice, BobUserId);
+
+    GroupConversation charlieAliceGroupConversation = new GroupConversation();
+
+    // Get the first private message, came from Alice
+    download = serverFetchEncrypted(charlieDevice.id);
+    decrypted = charlieAliceConversation.decrypt(download);
+    payload = MessageExamplePayload.decode(decrypted);
+    // Check whether this is a sender key message
+    Assert.assertEquals(payload.type, 2);
+
+    charlieAliceGroupConversation.initRecipient(payload.contents);
+
+    // This one is from Bob
+    // In real life, you should do this differently (e.g. this should happen in an event handler)
+    download = serverFetchEncrypted(charlieDevice.id);
+    decrypted = charlieBobConversation.decrypt(download);
+    payload = MessageExamplePayload.decode(decrypted);
+    // Check whether this is a sender key message
+    Assert.assertEquals(payload.type, 2);
+
+    charlieAliceGroupConversation.initRecipient(payload.contents);
+
+    int charlieAliceGroupIndex = 0;
+    download = serverGetFromGroup(aliceGroupId, charlieAliceGroupIndex++);
+    decrypted = charlieAliceGroupConversation.decrypt(download);
+
+    Assert.assertArrayEquals(decrypted, "Welcome".getBytes());
+
+    download = serverGetFromGroup(aliceGroupId, charlieAliceGroupIndex++);
+    decrypted = charlieAliceGroupConversation.decrypt(download);
+
+    Assert.assertArrayEquals(decrypted, message);
+
+    // ------------------------------------------------------------------
+    // Bob add a new device
+    // What he needs to do is just reinit the device and generate a new
+    // sender key and broadcasts it to all members
+    SesameSenderDevice bobDevice2 = new SesameSenderDevice(BobDeviceId2, BobUserId);
+    byte[] bundlePublicRaw = bobDevice2.getBundle().bundlePublic.encode();
+    BundlePublicCollection bundlePublicCollection = serverBundles.get(BobUserId);
+    bundlePublicCollection.put(BobDeviceId2, BundlePublic.decode(bundlePublicRaw));
+    serverBundles.put(BobUserId, bundlePublicCollection);
+
+    GroupConversation bobAliceGroupConversation2 = new GroupConversation();
+    bobAliceGroupConversation2.initSender(BobDeviceId2);
+
+    MessageExamplePayload bobSenderKeyPayload2 = new MessageExamplePayload(bobAliceGroupConversation2.getSenderKey());
+
+    // The new device sends out its sender key to all members
+    // Here we use only Alice as example
+    SesameConversation bobAliceConversation2 = establishConversation(BobUserId, bobDevice2, AliceUserId);
+    bobAliceConversation2.initializeSender();
+    encrypted = bobAliceConversation2.encrypt(bobSenderKeyPayload2.encode());
+    serverPutToMailbox(encrypted);
+
+    // Then in some way, Bob broadcasts that there's a new device
+    // so Alice and Charlie can re-send their sender key
+    // we only do it for Alice in this example for simplicity
+    // But first we update the conversation so the new device can be sent to
+    aliceBobConversation = establishConversation(AliceUserId, aliceDevice, BobUserId);
+
+    // Then the broadcast is received by each Alice and Charlie
+    // (we only show Alice here)
+    download = serverFetchEncrypted(aliceDevice.id);
+    decrypted = aliceBobConversation.decrypt(download);
+    payload = MessageExamplePayload.decode(decrypted);
+    Assert.assertEquals(payload.type, 2);
+    aliceGroup.initRecipient(payload.contents);
+
+    // Alice can only send to Bob after initializing secret keys
+    // by either calling initializeSender or decrypting a message
+    aliceSenderKeyPayload = new MessageExamplePayload(aliceGroup.getSenderKey());
+    encrypted = aliceBobConversation.encrypt(aliceSenderKeyPayload.encode());
+    serverPutToMailbox(encrypted);
+
+    // Bob2 also gets Alice latest sender key
+    download = serverFetchEncrypted(bobDevice2.id);
+    decrypted = bobAliceConversation2.decrypt(download);
+    payload = MessageExamplePayload.decode(decrypted);
+    Assert.assertEquals(payload.type, 2);
+    bobAliceGroupConversation2.initRecipient(payload.contents);
+
+    // THen alice sends a message to the group
+    message = "Hello again".getBytes();
+    encrypted = aliceGroup.encrypt(message);
+    serverPutToGroup(aliceGroupId, encrypted);
+
+    // A new Bob can read the message
+    int bobAliceGroupIndex2 = bobAliceGroupIndex;
+    bobAliceGroupIndex2++; // Skip the message which was sent by Bob (message BobMsg1)
+    download = serverGetFromGroup(aliceGroupId, bobAliceGroupIndex2++);
+    decrypted = bobAliceGroupConversation2.decrypt(download);
+    Assert.assertArrayEquals(decrypted, "Hello again".getBytes());
+
+    // Old Bob also still can read the messages
+    // BobMsg1
+    download = serverGetFromGroup(aliceGroupId, bobAliceGroupIndex++);
+    decrypted = bobAliceGroupConversation.decrypt(download);
+    Assert.assertArrayEquals(decrypted, "Hello from Bob".getBytes());
+
+    download = serverGetFromGroup(aliceGroupId, bobAliceGroupIndex++);
+    decrypted = bobAliceGroupConversation.decrypt(download);
+    Assert.assertArrayEquals(decrypted, "Hello again".getBytes());
+
+  }
+
 
   SesameSenderDevice initDevice(HashId deviceId, String userId) throws NoSuchAlgorithmException, IllegalDataSizeException, InvalidKeyException, SignatureException {
     SesameSenderDevice device = new SesameSenderDevice(deviceId, userId);
@@ -1128,7 +1371,7 @@ public class GroupConversationInstrumentedTest {
     byte[] download = serverTargetBundlePublicCollection.encode();
     BundlePublicCollection targetBundlePublicCollection = BundlePublicCollection.decode(download);
 
-    SesameConversation targetConversation = new SesameConversation(me, myDevice.id, myDevice.getBundle(), BobUserId, targetBundlePublicCollection);
+    SesameConversation targetConversation = new SesameConversation(me, myDevice.id, myDevice.getBundle(), target, targetBundlePublicCollection);
 
     return targetConversation;
   }
