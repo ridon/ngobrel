@@ -65,6 +65,11 @@ public class SesameConversation {
       BundlePublic bundlePublic = recipientPublic.get(id);
 
       if (isSender){
+        SesameConversationSecret recipientSecret = secrets.get(id);
+        // Skip if there's already a secret for this recipient
+        if (recipientSecret != null) {
+          break;
+        }
         KeyPair ephKey = new KeyPair();
         SharedKey sk = X3dhMessage.getSharedKeySender(ephKey,
                                                       senderBundle.bundlePrivate,
@@ -248,7 +253,7 @@ public class SesameConversation {
    * @throws InvalidKeyException
    * @throws IOException
    */
-  public byte[] encrypt(byte[] data) throws EncryptionFailedException, NoSuchAlgorithmException, IllegalDataSizeException, InvalidKeyException, IOException {
+  public byte[] encrypt(byte[] data) throws EncryptionFailedException, NoSuchAlgorithmException, IllegalDataSizeException, InvalidKeyException, IOException, EncryptionEmptyRecipientException {
     prepEncrypt();
 
     HashMap<HashId, byte[]> retval = new HashMap<>();
@@ -270,6 +275,9 @@ public class SesameConversation {
       }
     }
 
+    if (retval.keySet().size() == 0) {
+      throw new EncryptionEmptyRecipientException();
+    }
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     ByteBuffer buffer = ByteBuffer.allocate(4);
     buffer.putInt(retval.size());
