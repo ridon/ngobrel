@@ -19,6 +19,7 @@ public class MessageExamplePayload {
     0 plain message
     1 media message
     2 sender key message
+    3 handshake message
    */
   int type;
 
@@ -69,6 +70,11 @@ public class MessageExamplePayload {
   public MessageExamplePayload(byte[] senderKey) {
     this.type = 2;
     this.contents = senderKey;
+  }
+
+  // Handshake Message
+  public MessageExamplePayload() {
+    this.type = 3;
   }
 
   byte[] encode() throws IOException {
