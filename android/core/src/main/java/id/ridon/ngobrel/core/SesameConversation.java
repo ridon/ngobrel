@@ -261,14 +261,17 @@ public class SesameConversation {
     HashId id = fetchActiveSession(recipientName);
 
     if (id != null) {
-      byte[] msg = doEncrypt(id, data);
-      retval.put(id, msg);
+      if (!id.equals(selfDeviceId)) {
+        byte[] msg = doEncrypt(id, data);
+        retval.put(id, msg);
+      }
     } else {
       Set<HashId> ids = secrets.keySet();
       Iterator<HashId> it = ids.iterator();
       while (it.hasNext()) {
         try {
           HashId hashId = it.next();
+          if (hashId.equals(selfDeviceId)) continue;
           retval.put(hashId, doEncrypt(hashId, data));
         } catch (Exception e) {
         }
