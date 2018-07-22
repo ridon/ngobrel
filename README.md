@@ -1,8 +1,5 @@
 # Ngobrel
 
-This is ngobrel library written in Go.
+The project is moved to https://github.com/ngobrel
 
-# License
-
-This library is licensed in MIT. It contains ed25519 implementation made by Go Authors.
-
+See you there.
