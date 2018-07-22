@@ -162,7 +162,6 @@ public class GroupConversationInstrumentedTest {
 
     // 2.a.3 Alice starts a conversation with Bob
     SesameConversation aliceBobConversation = new SesameConversation(AliceUserId, aliceDevice.id, aliceDevice.getBundle(), BobUserId, aliceBobBundlePublicCollection);
-    aliceBobConversation.initializeSender();
 
     // 2.b.1 She downloads Charlie's public bundle
     // First, the server prepares it first and make it ready to be downloaded
@@ -174,7 +173,6 @@ public class GroupConversationInstrumentedTest {
 
     // 2.b.3 Alice starts a conversation with Charlie
     SesameConversation aliceCharlieConversation = new SesameConversation(AliceUserId, aliceDevice.id, aliceDevice.getBundle(), CharlieUserId, aliceCharlieBundlePublicCollection);
-    aliceCharlieConversation.initializeSender();
 
     // 3. At this moment, Alice has her own copy of the GroupConversation object
     // 3.1 She creates her sender key
@@ -251,7 +249,6 @@ public class GroupConversationInstrumentedTest {
     BundlePublicCollection bobCharlieBundlePublicCollection = BundlePublicCollection.decode(download);
 
     SesameConversation bobCharlieConversation = new SesameConversation(BobUserId, bobDevice.id, bobDevice.getBundle(), CharlieUserId, bobCharlieBundlePublicCollection);
-    bobCharlieConversation.initializeSender();
 
     // and send it to server
     encrypted = bobCharlieConversation.encrypt(bobSenderKeyPayload.encode());
@@ -368,10 +365,8 @@ public class GroupConversationInstrumentedTest {
     HashId aliceGroupId = serverRegisterGroup();
 
     SesameConversation aliceBobConversation = establishConversation(AliceUserId, aliceDevice, BobUserId);
-    aliceBobConversation.initializeSender();
 
     SesameConversation aliceCharlieConversation = establishConversation(AliceUserId, aliceDevice, CharlieUserId);
-    aliceCharlieConversation.initializeSender();
 
     GroupConversation aliceGroup = new GroupConversation();
     aliceGroup.initSender(AliceDeviceId1);
@@ -432,7 +427,6 @@ public class GroupConversationInstrumentedTest {
 
     // but not with Charlie, so he must initiate conversation with Charlie
     SesameConversation bobCharlieConversation = establishConversation(BobUserId, bobDevice, CharlieUserId);
-    bobCharlieConversation.initializeSender();
 
     // and send it to server
     encrypted = bobCharlieConversation.encrypt(bobSenderKeyPayload.encode());
@@ -516,10 +510,6 @@ public class GroupConversationInstrumentedTest {
     SesameConversation daveAliceConversation = establishConversation(DaveUserId, daveDevice, AliceUserId);
     SesameConversation daveBobConversation = establishConversation(DaveUserId, daveDevice, BobUserId);
     SesameConversation daveCharlieConversation = establishConversation(DaveUserId, daveDevice, CharlieUserId);
-
-    daveAliceConversation.initializeSender();
-    daveBobConversation.initializeSender();
-    daveCharlieConversation.initializeSender();
 
     GroupConversation daveAliceGroupConversation = new GroupConversation();
     daveAliceGroupConversation.initSender(DaveDeviceId1);
@@ -607,10 +597,8 @@ public class GroupConversationInstrumentedTest {
     HashId aliceGroupId = serverRegisterGroup();
 
     SesameConversation aliceBobConversation = establishConversation(AliceUserId, aliceDevice, BobUserId);
-    aliceBobConversation.initializeSender();
 
     SesameConversation aliceCharlieConversation = establishConversation(AliceUserId, aliceDevice, CharlieUserId);
-    aliceCharlieConversation.initializeSender();
 
     GroupConversation aliceGroup = new GroupConversation();
     aliceGroup.initSender(AliceDeviceId1);
@@ -671,7 +659,6 @@ public class GroupConversationInstrumentedTest {
 
     // but not with Charlie, so he must initiate conversation with Charlie
     SesameConversation bobCharlieConversation = establishConversation(BobUserId, bobDevice, CharlieUserId);
-    bobCharlieConversation.initializeSender();
 
     // and send it to server
     encrypted = bobCharlieConversation.encrypt(bobSenderKeyPayload.encode());
@@ -755,10 +742,6 @@ public class GroupConversationInstrumentedTest {
     SesameConversation daveAliceConversation = establishConversation(DaveUserId, daveDevice, AliceUserId);
     SesameConversation daveBobConversation = establishConversation(DaveUserId, daveDevice, BobUserId);
     SesameConversation daveCharlieConversation = establishConversation(DaveUserId, daveDevice, CharlieUserId);
-
-    daveAliceConversation.initializeSender();
-    daveBobConversation.initializeSender();
-    daveCharlieConversation.initializeSender();
 
     GroupConversation daveAliceGroupConversation = new GroupConversation();
     daveAliceGroupConversation.initSender(DaveDeviceId1);
@@ -938,10 +921,8 @@ public class GroupConversationInstrumentedTest {
       HashId aliceGroupId = serverRegisterGroup();
 
       SesameConversation aliceBobConversation = establishConversation(AliceUserId, aliceDevice, BobUserId);
-      aliceBobConversation.initializeSender();
 
       SesameConversation aliceCharlieConversation = establishConversation(AliceUserId, aliceDevice, CharlieUserId);
-      aliceCharlieConversation.initializeSender();
 
       GroupConversation aliceGroup = new GroupConversation();
       aliceGroup.initSender(AliceDeviceId1);
@@ -1002,7 +983,6 @@ public class GroupConversationInstrumentedTest {
 
       // but not with Charlie, so he must initiate conversation with Charlie
       SesameConversation bobCharlieConversation = establishConversation(BobUserId, bobDevice, CharlieUserId);
-      bobCharlieConversation.initializeSender();
 
       // and send it to server
       encrypted = bobCharlieConversation.encrypt(bobSenderKeyPayload.encode());
@@ -1147,10 +1127,8 @@ public class GroupConversationInstrumentedTest {
     HashId aliceGroupId = serverRegisterGroup();
 
     SesameConversation aliceBobConversation = establishConversation(AliceUserId, aliceDevice, BobUserId);
-    aliceBobConversation.initializeSender();
 
     SesameConversation aliceCharlieConversation = establishConversation(AliceUserId, aliceDevice, CharlieUserId);
-    aliceCharlieConversation.initializeSender();
 
     GroupConversation aliceGroup = new GroupConversation();
     aliceGroup.initSender(AliceDeviceId1);
@@ -1212,7 +1190,6 @@ public class GroupConversationInstrumentedTest {
 
     // but not with Charlie, so he must initiate conversation with Charlie
     SesameConversation bobCharlieConversation = establishConversation(BobUserId, bobDevice, CharlieUserId);
-    bobCharlieConversation.initializeSender();
 
     // and send it to server
     encrypted = bobCharlieConversation.encrypt(bobSenderKeyPayload.encode());
@@ -1309,7 +1286,6 @@ public class GroupConversationInstrumentedTest {
     // The new device sends out its sender key to all members
     // Here we use only Alice as example
     SesameConversation bobAliceConversation2 = establishConversation(BobUserId, bobDevice2, AliceUserId);
-    bobAliceConversation2.initializeSender();
     encrypted = bobAliceConversation2.encrypt(bobSenderKeyPayload2.encode());
     serverPutToMailbox(encrypted);
 
@@ -1327,8 +1303,6 @@ public class GroupConversationInstrumentedTest {
     Assert.assertEquals(payload.type, 2);
     aliceGroup.initRecipient(payload.contents);
 
-    // Alice can only send to Bob after initializing secret keys
-    // by either calling initializeSender or decrypting a message
     aliceSenderKeyPayload = new MessageExamplePayload(aliceGroup.getSenderKey());
     encrypted = aliceBobConversation.encrypt(aliceSenderKeyPayload.encode());
     serverPutToMailbox(encrypted);
@@ -1388,13 +1362,10 @@ public class GroupConversationInstrumentedTest {
     HashId aliceGroupId = serverRegisterGroup();
 
     SesameConversation aliceBobConversation1 = establishConversation(AliceUserId, aliceDevice1, BobUserId);
-    aliceBobConversation1.initializeSender();
 
     SesameConversation aliceCharlieConversation1 = establishConversation(AliceUserId, aliceDevice1, CharlieUserId);
-    aliceCharlieConversation1.initializeSender();
 
     SesameConversation alice1Alice2Conversation = establishConversation(AliceUserId, aliceDevice1, AliceUserId);
-    alice1Alice2Conversation.initializeSender();
 
     GroupConversation aliceGroup1 = new GroupConversation();
     aliceGroup1.initSender(AliceDeviceId1);
@@ -1436,10 +1407,8 @@ public class GroupConversationInstrumentedTest {
     MessageExamplePayload aliceSenderKeyPayload2 = new MessageExamplePayload(aliceGroup2.getSenderKey());
 
     SesameConversation aliceBobConversation2 = establishConversation(AliceUserId, aliceDevice2, BobUserId);
-    aliceBobConversation2.initializeSender();
 
     SesameConversation aliceCharlieConversation2 = establishConversation(AliceUserId, aliceDevice2, CharlieUserId);
-    aliceCharlieConversation2.initializeSender();
 
     // Alice #2 sends senderKey
     encrypted = aliceBobConversation2.encrypt(aliceSenderKeyPayload.encode());
@@ -1498,7 +1467,6 @@ public class GroupConversationInstrumentedTest {
 
     // but not with Charlie, so he must initiate conversation with Charlie
     SesameConversation bobCharlieConversation = establishConversation(BobUserId, bobDevice, CharlieUserId);
-    bobCharlieConversation.initializeSender();
 
     // and send it to server
     encrypted = bobCharlieConversation.encrypt(bobSenderKeyPayload.encode());

@@ -44,69 +44,51 @@ public class SesameConversation {
     this.recipientPublic = recipientPublic;
   }
 
-  /**
-   * Initializes Sesame as sender
-   * @throws IllegalDataSizeException
-   * @throws NoSuchAlgorithmException
-   * @throws EncryptionFailedException
-   */
-  public void initializeSender() throws IllegalDataSizeException, NoSuchAlgorithmException, EncryptionFailedException {
-    populateSecrets(true);
-  }
+  private void populateSecret(HashId id, boolean isSender) throws EncryptionFailedException, IllegalDataSizeException, NoSuchAlgorithmException {
+    BundlePublic bundlePublic = recipientPublic.get(id);
 
-  private void populateSecrets(boolean isSender) throws NoSuchAlgorithmException, IllegalDataSizeException, EncryptionFailedException {
-    secrets = new HashMap<>();
-    ratchets = new HashMap<>();
-    Set<HashId> pubIds = recipientPublic.getIds();
-    Iterator<HashId> it = pubIds.iterator();
-    while (it.hasNext()) {
-      HashId id = it.next();
-      BundlePublic bundlePublic = recipientPublic.get(id);
-
-      if (isSender){
-        SesameConversationSecret recipientSecret = secrets.get(id);
-        // Skip if there's already a secret for this recipient
-        if (recipientSecret != null) {
-          break;
-        }
-        KeyPair ephKey = new KeyPair();
-        SharedKey sk = X3dhMessage.getSharedKeySender(ephKey,
-                                                      senderBundle.bundlePrivate,
-                                                      bundlePublic,
-                                                      Constants.RidonSesameSharedKey);
-
-        byte[] m = Constants.RidonSecretMessage.getBytes();
-
-        byte[] ad = new byte[PublicKey.ESIZE * 2];
-        System.arraycopy(senderBundle.bundlePublic.identity.encode(), 0, ad, 0, PublicKey.ESIZE);
-        System.arraycopy(bundlePublic.identity.encode(), 0, ad, PublicKey.ESIZE, PublicKey.ESIZE);
-
-        MessageDigest md = MessageDigest.getInstance("SHA-256");
-        md.update(ad);
-
-        byte[] adHash = md.digest();
-
-        X3dhMessage msg = new X3dhMessage(senderBundle.bundlePublic.identity, ephKey.publicKey, sk.preKeyId, sk.key, m, adHash);
-        byte[] msgEncoded = msg.encode();
-        SesameConversationSecret secret = new SesameConversationSecret(msgEncoded, msgEncoded.length, adHash);
-        secrets.put(id, secret);
-
-        Ratchet r = new Ratchet();
-        r.initSender(bundlePublic.spk.publicKey, new Key(sk.key));
-        ratchets.put(id, r);
-      } else {
-        secrets.put(id, new SesameConversationSecret());
+    if (isSender) {
+      SesameConversationSecret recipientSecret = secrets.get(id);
+      // Skip if there's already a secret for this recipient
+      if (recipientSecret != null) {
+        return;
       }
+      KeyPair ephKey = new KeyPair();
+      SharedKey sk = X3dhMessage.getSharedKeySender(ephKey,
+              senderBundle.bundlePrivate,
+              bundlePublic,
+              Constants.RidonSesameSharedKey);
+
+      byte[] m = Constants.RidonSecretMessage.getBytes();
+
+      byte[] ad = new byte[PublicKey.ESIZE * 2];
+      System.arraycopy(senderBundle.bundlePublic.identity.encode(), 0, ad, 0, PublicKey.ESIZE);
+      System.arraycopy(bundlePublic.identity.encode(), 0, ad, PublicKey.ESIZE, PublicKey.ESIZE);
+
+      MessageDigest md = MessageDigest.getInstance("SHA-256");
+      md.update(ad);
+
+      byte[] adHash = md.digest();
+
+      X3dhMessage msg = new X3dhMessage(senderBundle.bundlePublic.identity, ephKey.publicKey, sk.preKeyId, sk.key, m, adHash);
+      byte[] msgEncoded = msg.encode();
+      SesameConversationSecret secret = new SesameConversationSecret(msgEncoded, msgEncoded.length, adHash);
+      secrets.put(id, secret);
+
+      Ratchet r = new Ratchet();
+      r.initSender(bundlePublic.spk.publicKey, new Key(sk.key));
+      ratchets.put(id, r);
+    } else {
+      secrets.put(id, new SesameConversationSecret());
     }
   }
 
   /*
-
   byte[8]  magix
   int64    x3dh data size
   byte[]   x3dh data + data
    */
-  private byte[] initializeRecipient(HashId id, byte[] message, boolean skipInitSecrets) throws SignatureException, IllegalDataSizeException, InvalidKeyException, NoSuchAlgorithmException, EncryptionFailedException {
+  private byte[] initializeRecipient(HashId id, byte[] message) throws SignatureException, IllegalDataSizeException, InvalidKeyException, NoSuchAlgorithmException, EncryptionFailedException {
     ByteBuffer b = ByteBuffer.wrap(message, 0, 8);
     if (b.getInt() != Constants.RidonMagix) {
       throw new SignatureException();
@@ -121,22 +103,16 @@ public class SesameConversation {
     System.arraycopy(message, 16, msg, 0, size);
     System.arraycopy(message, size + 16, data, 0, remaining);
 
-    if (!skipInitSecrets) {
-      populateSecrets(false);
-    }
-
     BundlePublic pub = recipientPublic.get(id);
     X3dhMessage x3dhMessage = X3dhMessage.decode(msg);
 
     final byte[] sharedKeyRecipient = X3dhMessage.getSharedKeyRecipient(x3dhMessage.ephKey, x3dhMessage.preKeyId, senderBundle.bundlePrivate, pub, Constants.RidonSesameSharedKey);
     KeyPair pair = new KeyPair(senderBundle.bundlePrivate.spk, senderBundle.bundlePublic.spk.publicKey);
 
-    Ratchet r = ratchets.get(id);
-    if (r == null) {
-      r = new Ratchet();
-      r.initRecipient(pair, new Key(sharedKeyRecipient));
-      ratchets.put(id, r);
-    }
+    Ratchet r = new Ratchet();
+    r.initRecipient(pair, new Key(sharedKeyRecipient));
+    ratchets.put(id, r);
+
 
     byte[] ad = new byte[Key.ESIZE * 2];
     System.arraycopy(pub.identity.encode(), 0, ad, 0, Key.ESIZE);
@@ -265,14 +241,17 @@ public class SesameConversation {
         retval.put(id, msg);
       }
     } else {
-      Set<HashId> ids = secrets.keySet();
+      Set<HashId> ids = recipientPublic.getIds();
       Iterator<HashId> it = ids.iterator();
       while (it.hasNext()) {
         try {
           HashId hashId = it.next();
+
           if (hashId.equals(selfDeviceId)) continue;
           retval.put(hashId, doEncrypt(hashId, data));
+
         } catch (Exception e) {
+          // empty
         }
       }
     }
@@ -338,12 +317,23 @@ public class SesameConversation {
   private byte[] doEncrypt(HashId id, byte[] data) throws EncryptionFailedException, IllegalDataSizeException, NoSuchAlgorithmException, InvalidKeyException, IOException {
     SesameConversationSecret secret = secrets.get(id);
     if (secret == null) {
-      throw new EncryptionFailedException();
+      populateSecret(id, true);
+      secret = secrets.get(id);
+      if (secret == null) {
+        throw new EncryptionFailedException("Secret is not found for ID " + id.toString());
+      }
     }
+
 
     Ratchet ratchet = ratchets.get(id);
     if (ratchet == null) {
-      throw new EncryptionFailedException();
+      // populate first if does not exist
+      populateSecret(id, true);
+      ratchet = ratchets.get(id);
+      // check again
+      if (ratchet == null) {
+        throw new EncryptionFailedException("Ratchet is not found for ID " + id.toString());
+      }
     }
 
     byte[] msg = ratchet.encrypt(data, secret.ad);
@@ -428,7 +418,7 @@ public class SesameConversation {
     input.read(data);
     SesameConversationSecret secret = secrets.get(senderId);
     if (hasX3dhMessage || secret == null) {
-      final byte[] msgData = initializeRecipient(senderId, data, secret != null);
+      final byte[] msgData = initializeRecipient(senderId, data);
       secret = secrets.get(senderId); // this should be populated now after init
       data = msgData;
     }
