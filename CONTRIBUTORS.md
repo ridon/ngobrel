@@ -1,1 +1,2 @@
-Mohammad Anwari <mdamt@ridon.id>
+Mohammad Anwari @mdamt
+Zetra @zeibatsu
