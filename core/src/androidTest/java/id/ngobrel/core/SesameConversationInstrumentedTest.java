@@ -845,6 +845,73 @@ public class SesameConversationInstrumentedTest {
     Assert.assertEquals(Arrays.equals(decrypted, aliceMessage2.getBytes()), true);
   }
 
+  // By @zetra
+  @Test
+  public void twoSenderDeviceRidon17() throws Exception {
+    mailBoxes = new HashMap<>();
+
+    // Alice devices
+    SesameSenderDevice aliceDevice1 = new SesameSenderDevice(AliceDeviceId1, AliceUserId);
+    SesameSenderDevice aliceDevice2 = new SesameSenderDevice(AliceDeviceId2, AliceUserId);
+
+    BundlePublicCollection aliceBundlePublicCollection = new BundlePublicCollection(AliceDeviceId1, aliceDevice1.bundle.bundlePublic);
+    aliceBundlePublicCollection.put(AliceDeviceId2, aliceDevice2.bundle.bundlePublic);
+
+    // Bob device
+    SesameSenderDevice bobDevice = new SesameSenderDevice(BobDeviceId1, BobUserId);
+    BundlePublicCollection bobBundlePublicCollection = new BundlePublicCollection(BobDeviceId1, bobDevice.bundle.bundlePublic);
+
+    // Alice 1 send message
+    SesameConversation aliceConversation1 = new SesameConversation(AliceUserId, aliceDevice1.id, aliceDevice1.bundle, BobUserId, bobBundlePublicCollection);
+    String aliceMessage1 = "Halo bob!";
+    byte[] encrypted = aliceConversation1.encrypt(aliceMessage1.getBytes());
+
+    // Bob got message
+    SesameConversation bobConversation = new SesameConversation(BobUserId, bobDevice.id, bobDevice.bundle, AliceUserId, aliceBundlePublicCollection);
+    byte[] decrypted = bobConversation.decrypt(unpackData(bobDevice.id, encrypted));
+    Assert.assertEquals(Arrays.equals(decrypted, aliceMessage1.getBytes()), true);
+
+    // Bob replies
+    String bobMessage1 = "Hi alice!";
+    encrypted = bobConversation.encrypt(bobMessage1.getBytes());
+
+    // Alice 1 got message
+    decrypted = aliceConversation1.decrypt(unpackData(aliceDevice1.id, encrypted));
+    Assert.assertEquals(Arrays.equals(decrypted, bobMessage1.getBytes()), true);
+
+    // Alice 2 got message too
+    SesameConversation aliceConversation2 = new SesameConversation(AliceUserId, aliceDevice2.id, aliceDevice2.bundle, BobUserId, bobBundlePublicCollection);
+    decrypted = aliceConversation2.decrypt(unpackData(aliceDevice2.id, encrypted));
+    Assert.assertEquals(Arrays.equals(decrypted, bobMessage1.getBytes()), true);
+
+    // Alice 2 send message
+    String aliceMessage2 = "Hey what's up bob?";
+    encrypted = aliceConversation2.encrypt(aliceMessage2.getBytes());
+
+    // Bob got message
+    decrypted = bobConversation.decrypt(unpackData(bobDevice.id, encrypted));
+    Assert.assertEquals(Arrays.equals(decrypted, aliceMessage2.getBytes()), true);
+
+    // Bob replies
+    String bobMessage2 = "Great alice!";
+    encrypted = bobConversation.encrypt(bobMessage2.getBytes());
+
+    // Alice 1 got message
+    decrypted = aliceConversation1.decrypt(unpackData(aliceDevice1.id, encrypted));
+    Assert.assertEquals(Arrays.equals(decrypted, bobMessage2.getBytes()), true);
+
+    // Alice 2 got message too
+    decrypted = aliceConversation2.decrypt(unpackData(aliceDevice2.id, encrypted));
+    Assert.assertEquals(Arrays.equals(decrypted, bobMessage2.getBytes()), true);
+
+    // Alice 1 replies
+    String aliceMessage3 = "Awesome!!";
+    encrypted = aliceConversation1.encrypt(aliceMessage3.getBytes());
+
+    // Bob got message
+    decrypted = bobConversation.decrypt(unpackData(bobDevice.id, encrypted));
+    Assert.assertEquals(Arrays.equals(decrypted, aliceMessage3.getBytes()), true);
+  }
 
   private static byte[] unpackData(HashId recipientId, byte[] rawData) throws IOException, InvalidKeyException {
     HashMap<HashId, byte[]> unpacked = SesameConversation.unpackEncrypted(rawData);
